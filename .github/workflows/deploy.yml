@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main  # Change to 'master' if your default branch is 'master'
+      - main
 
 permissions:
   contents: read
@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'  # Changed from '20' to '22'
           cache: 'npm'
 
       - name: Install dependencies
