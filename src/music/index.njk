@@ -1,0 +1,1201 @@
+---
+title: "Music"
+layout: "base.njk"
+---
+
+<h1>My Music</h1>
+
+<p>Here are some of my recordings. The default playlist features my latest songs. You can customize your playlist by adding or removing songs below!</p>
+
+<section class="music-player">
+    <div class="player-controls">
+        <h3 id="now-playing">Higher Dimensions (Alien Thoughts EP)</h3>
+        <audio id="audio-player" controls autoplay>
+            <source src="https://www.dropbox.com/scl/fi/ixe7ej7nn9pi8sule3mh5/1-Higher-Dimensions-by-E9.mp3?rlkey=z6r89fk93fnhxxjir14jm79c6&st=94v061iu&raw=1" type="audio/mpeg">
+            Your browser does not support audio.
+        </audio>
+        
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+            <div class="time-info">
+                <span id="current-time">0:00</span>
+                <span id="total-time">0:00</span>
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button onclick="toggleShuffle()" id="shuffle-btn" title="Shuffle (S)">🔀</button>
+            <button onclick="playPrev()" title="Previous (←)">⏮</button>
+            <button onclick="togglePlay()" id="play-btn" title="Play/Pause (Space)">⏸</button>
+            <button onclick="playNext()" title="Next (→)">⏭</button>
+            <button onclick="toggleRepeat()" id="repeat-btn" title="Repeat (R)">🔁</button>
+        </div>
+        
+        <!-- Volume Control -->
+        <div class="volume-control">
+            <span>🔊</span>
+            <input type="range" min="0" max="1" step="0.01" value="0.8" id="volume-control">
+        </div>
+    </div>
+
+    <!-- Custom Playlist Section -->
+    <div class="playlist-section">
+        <div class="playlist-header">
+            <h3>Now Playing <span id="playlist-status">(4 songs)</span></h3>
+            <div class="playlist-actions">
+                <button onclick="clearPlaylist()" class="action-btn" title="Clear Playlist">🗑️ Clear</button>
+                <button onclick="resetPlaylist()" class="action-btn" title="Reset to Default">↩️ Reset</button>
+            </div>
+        </div>
+        <ul id="playlist">
+            <!-- Playlist items will be rendered here -->
+        </ul>
+    </div>
+
+    <!-- Library Section -->
+    <div class="library-section">
+        <h3>All Songs <span id="library-count">(8 songs)</span></h3>
+        <p class="library-hint">Click ➕ to add a song to your playlist, or click on a song title to play it immediately.</p>
+        <div id="library">
+            <!-- Library items with headers will be rendered here -->
+        </div>
+    </div>
+</section>
+
+<style>
+/* Music Player - Dark mode fixes */
+.player-controls {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    padding: 30px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+/* Fix for the audio player element itself */
+#audio-player {
+    width: 100%;
+    margin-bottom: 20px;
+    background-color: var(--card-bg);
+    border-radius: 5px;
+}
+
+/* Audio player custom styling for dark mode */
+audio {
+    background-color: var(--card-bg);
+    border-radius: 5px;
+}
+
+/* Style the audio player controls */
+audio::-webkit-media-controls-panel {
+    background-color: var(--card-bg);
+}
+
+audio::-webkit-media-controls-current-time-display,
+audio::-webkit-media-controls-time-remaining-display {
+    color: var(--text-color);
+}
+
+/* Firefox audio player */
+audio::-moz-range-track {
+    background-color: var(--border-color);
+}
+
+audio::-moz-range-thumb {
+    background-color: var(--link-color);
+}
+
+/* Playlist Section */
+.playlist-section {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.playlist-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.playlist-section h3 {
+    color: var(--text-color);
+    margin: 0;
+}
+
+#playlist-status {
+    font-weight: normal;
+    font-size: 0.8em;
+    color: var(--secondary-text);
+}
+
+.playlist-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    background: var(--active-bg);
+    color: var(--active-text);
+    border: none;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+/* Library Section */
+.library-section {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.library-section h3 {
+    color: var(--text-color);
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+
+.library-hint {
+    color: var(--secondary-text);
+    font-size: 0.85em;
+    margin-bottom: 15px;
+}
+
+#library-count {
+    font-weight: normal;
+    font-size: 0.8em;
+    color: var(--secondary-text);
+}
+
+/* Library Section Headers */
+.library-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding: 8px 15px;
+    background-color: var(--playlist-hover);
+    border-radius: 20px;
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 1.15em;
+    border-bottom: 5px solid var(--link-color);
+}
+
+.library-header:first-of-type {
+    margin-top: 0;
+}
+
+.library-header .load-section-btn {
+    background: var(--link-color);
+    color: white;
+    border: none;
+    padding: 4px 14px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.6em;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.library-header .load-section-btn:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.library-header .load-section-btn:active {
+    transform: scale(0.95);
+}
+
+/* Shared playlist styles */
+#playlist,
+#library ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#playlist li,
+#library li {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+    position: relative;
+    color: var(--text-color);
+    gap: 10px;
+}
+
+#playlist li:last-child,
+#library li:last-child {
+    border-bottom: none;
+}
+
+/* Playlist items */
+#playlist li {
+    cursor: default;
+}
+
+#playlist li .song-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+#playlist li .song-title {
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#playlist li .song-duration {
+    color: var(--secondary-text);
+    font-size: 0.85em;
+    flex-shrink: 0;
+}
+
+#playlist li .remove-btn {
+    background: none;
+    border: none;
+    color: var(--secondary-text);
+    cursor: pointer;
+    font-size: 1.1em;
+    padding: 0 5px;
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+
+#playlist li .remove-btn:hover {
+    color: #ff4444;
+}
+
+#playlist li.active {
+    background-color: var(--active-bg);
+    color: var(--active-text);
+    border-radius: 5px;
+}
+
+#playlist li.active .song-title {
+    color: var(--active-text);
+}
+
+#playlist li.active .song-duration {
+    color: var(--secondary-text);
+}
+
+#playlist li.active::before {
+    content: "▶";
+    position: absolute;
+    left: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7em;
+    color: var(--link-color);
+}
+
+#playlist li .play-indicator {
+    display: none;
+    position: absolute;
+    left: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7em;
+    color: var(--link-color);
+}
+
+#playlist li.active .play-indicator {
+    display: block;
+}
+
+/* Library items */
+#library li {
+    cursor: pointer;
+}
+
+#library li:hover {
+    background-color: var(--playlist-hover);
+}
+
+#library li .song-title {
+    flex: 1;
+    color: var(--text-color);
+}
+
+#library li .song-duration {
+    color: var(--secondary-text);
+    font-size: 0.85em;
+}
+
+#library li .add-btn {
+    background: none;
+    border: none;
+    color: var(--secondary-text);
+    cursor: pointer;
+    font-size: 1.1em;
+    padding: 0 5px;
+    transition: all 0.2s;
+}
+
+#library li .add-btn:hover {
+    color: #00cc66;
+    transform: scale(1.2);
+}
+
+#library li .added-badge {
+    font-size: 0.85em;
+    color: var(--secondary-text);
+}
+
+/* Now playing text */
+#now-playing {
+    color: var(--text-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.2em;
+}
+
+/* Time displays */
+.time-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+    color: var(--secondary-text);
+    margin-top: 5px;
+}
+
+#current-time,
+#total-time {
+    color: var(--secondary-text);
+}
+
+/* Progress bar */
+.progress-container {
+    margin-bottom: 20px;
+}
+
+.progress-bar {
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+}
+
+.progress {
+    height: 100%;
+    background: var(--link-color);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.1s;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.controls button {
+    padding: 10px 15px;
+    background: var(--active-bg);
+    color: var(--active-text);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2em;
+    transition: all 0.3s;
+    min-width: 50px;
+}
+
+.controls button:hover {
+    background: var(--button-hover);
+    transform: scale(1.05);
+}
+
+.controls button:active {
+    transform: scale(0.95);
+}
+
+#play-btn {
+    font-size: 1.5em;
+    padding: 10px 20px;
+}
+
+#shuffle-btn.active,
+#repeat-btn.active {
+    color: var(--link-color);
+}
+
+/* Volume control */
+.volume-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--text-color);
+}
+
+.volume-control input[type="range"] {
+    width: 100px;
+    cursor: pointer;
+    background: var(--border-color);
+    accent-color: var(--link-color);
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+}
+
+.volume-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--link-color);
+    cursor: pointer;
+}
+
+.volume-control input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--link-color);
+    cursor: pointer;
+    border: none;
+}
+
+/* Ensure all text in the player section uses theme colors */
+.music-player {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.music-player h1,
+.music-player h2,
+.music-player h3,
+.music-player p {
+    color: var(--text-color);
+}
+
+.music-player p {
+    color: var(--text-color);
+}
+
+/* Fix for any remaining white backgrounds */
+section.music-player {
+    background-color: transparent;
+}
+
+/* Smooth transitions */
+.player-controls,
+.playlist-section,
+.library-section,
+#playlist li,
+#library li,
+.controls button,
+.volume-control input[type="range"],
+#audio-player {
+    transition: background-color 0.3s ease-in-out,
+                color 0.3s ease-in-out,
+                border-color 0.3s ease-in-out;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    .playlist-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    #playlist li,
+    #library li {
+        padding: 8px 10px;
+        flex-wrap: wrap;
+    }
+    
+    #playlist li .song-info {
+        min-width: 0;
+    }
+    
+    #library li .song-title {
+        font-size: 0.9em;
+    }
+    
+    .library-header {
+        font-size: 0.85em;
+        padding: 6px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .library-header .load-section-btn {
+        font-size: 0.7em;
+        padding: 3px 12px;
+    }
+}
+</style>
+
+<script>
+// ============================================================
+// PLAYLIST DATA - Add all your songs here
+// ============================================================
+const allSongs = [
+    // Alien Thoughts EP
+    {
+        id: 0,
+        title: "Higher Dimensions (Alien Thoughts EP)",
+        file: "https://www.dropbox.com/scl/fi/ixe7ej7nn9pi8sule3mh5/1-Higher-Dimensions-by-E9.mp3?rlkey=z6r89fk93fnhxxjir14jm79c6&st=94v061iu&raw=1",
+        duration: "2:18",
+        section: "Alien Thoughts EP"
+    },
+    {
+        id: 1,
+        title: "Make Believe (Alien Thoughts EP)",
+        file: "https://www.dropbox.com/scl/fi/c6aaqzlvpb1f6w2zntr2z/2-Make-Believe-by-E9.mp3?rlkey=1u996ttu97hjclzew4mxapbyq&st=0r5jcy08&raw=1",
+        duration: "5:55",
+        section: "Alien Thoughts EP"
+    },
+    {
+        id: 2,
+        title: "The Uncanny Valley (Alien Thoughts EP)",
+        file: "https://www.dropbox.com/scl/fi/mkmqqnhdbn94k1qb5v6o2/3-The-Uncanny-Valley-by-E9.mp3?rlkey=ky7p4jo5ijj9vzwsr7zv19k9h&st=ux7tzlj6&raw=1",
+        duration: "5:17",
+        section: "Alien Thoughts EP"
+    },
+    {
+        id: 3,
+        title: "Tearing Down The Temple (Alien Thoughts EP)",
+        file: "https://www.dropbox.com/scl/fi/8aohxek19wby7fq0rqebv/4-Tearing-Down-The-Temple-by-E9.mp3?rlkey=fv70csam7r47ibk4g1s14h2o5&st=nxgq6t00&raw=1",
+        duration: "9:29",
+        section: "Alien Thoughts EP"
+    },
+    // Backing Tracks
+    {
+        id: 4,
+        title: "Higher Dimensions (No Guitar Version)",
+        file: "https://www.dropbox.com/scl/fi/nv8b7r1vm1s8tajy6b6u0/Higher-Dimensions-No-Guitar.mp3?rlkey=cqvcmduw1tcjsgre5m3hsjn2e&st=6rqy0wsy&raw=1",
+        duration: "2:18",
+        section: "Alien Thoughts EP (Backing Tracks)"
+    },
+    {
+        id: 5,
+        title: "Make Believe (No Guitar Version)",
+        file: "https://www.dropbox.com/scl/fi/yky7y8nkun4ijbv5apqyi/Make-Believe-No-Guitar-4.mp3?rlkey=sw99znjnwvow3ji8c30xt22m2&st=g4fo7pg8&raw=1",
+        duration: "5:55",
+        section: "Alien Thoughts EP (Backing Tracks)"
+    },
+    {
+        id: 6,
+        title: "The Uncanny Valley (No Guitar Version)",
+        file: "https://www.dropbox.com/scl/fi/zglq0xort8f1u9tfgtaxq/The-Uncanny-Valley-No-Guitar-v2.mp3?rlkey=tm5oatjtfu9vx29n9qqr196mi&st=rzgoczt6&raw=1",
+        duration: "5:17",
+        section: "Alien Thoughts EP (Backing Tracks)"
+    },
+    {
+        id: 7,
+        title: "Tearing Down The Temple (No Guitar Version)",
+        file: "https://www.dropbox.com/scl/fi/ncmv9ruugocwtlgl6w1cw/TDTT-Master-No-Guitar-v1.mp3?rlkey=9kt3djfh21t7437ewh2rtjd34&st=j1dnphdz&raw=1",
+        duration: "9:29",
+        section: "Alien Thoughts EP (Backing Tracks)"
+    }
+];
+
+// ============================================================
+// DEFAULT PLAYLIST - Set your default playlist here
+// (Use the song IDs from allSongs)
+// ============================================================
+const DEFAULT_PLAYLIST_IDS = [0, 1, 2, 3]; // Your latest/recommended songs
+
+// ============================================================
+// PLAYER STATE
+// ============================================================
+let currentPlaylist = [];
+let currentTrackIndex = 0;
+let isShuffled = false;
+let repeatMode = 'none';
+let shuffledOrder = [];
+let currentShuffledIndex = 0;
+
+// ============================================================
+// DOM ELEMENTS
+// ============================================================
+const audio = document.getElementById('audio-player');
+const nowPlaying = document.getElementById('now-playing');
+const playlistEl = document.getElementById('playlist');
+const libraryEl = document.getElementById('library');
+const playlistStatus = document.getElementById('playlist-status');
+const libraryCount = document.getElementById('library-count');
+const playBtn = document.getElementById('play-btn');
+const shuffleBtn = document.getElementById('shuffle-btn');
+const repeatBtn = document.getElementById('repeat-btn');
+const progress = document.getElementById('progress');
+const progressBar = document.getElementById('progress-bar');
+const currentTimeDisplay = document.getElementById('current-time');
+const totalTimeDisplay = document.getElementById('total-time');
+const volumeControl = document.getElementById('volume-control');
+
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
+function getSongById(id) {
+    return allSongs.find(song => song.id === id);
+}
+
+function getSongsByIds(ids) {
+    return ids.map(id => getSongById(id)).filter(song => song !== undefined);
+}
+
+function savePlaylist() {
+    const ids = currentPlaylist.map(song => song.id);
+    localStorage.setItem('customPlaylist', JSON.stringify(ids));
+}
+
+function loadSavedPlaylist() {
+    const saved = localStorage.getItem('customPlaylist');
+    if (saved) {
+        try {
+            const ids = JSON.parse(saved);
+            const songs = getSongsByIds(ids);
+            if (songs.length > 0) {
+                return songs;
+            }
+        } catch (e) {}
+    }
+    return null;
+}
+
+function getPlaylist() {
+    const saved = loadSavedPlaylist();
+    return saved || getSongsByIds(DEFAULT_PLAYLIST_IDS);
+}
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+function renderPlaylist() {
+    playlistEl.innerHTML = '';
+    
+    if (currentPlaylist.length === 0) {
+        playlistEl.innerHTML = '<li style="text-align:center; color:var(--secondary-text); padding:20px; cursor:default;">No songs in playlist. Add some from the library below! 🎵</li>';
+        playlistStatus.textContent = '(0 songs)';
+        return;
+    }
+    
+    currentPlaylist.forEach((song, index) => {
+        const li = document.createElement('li');
+        li.dataset.index = index;
+        li.className = index === currentTrackIndex ? 'active' : '';
+        
+        li.innerHTML = `
+            <div class="song-info">
+                <span class="play-indicator">▶</span>
+                <span class="song-title">${song.title}</span>
+            </div>
+            <span class="song-duration">${song.duration}</span>
+            <button class="remove-btn" onclick="removeFromPlaylist(${index})" title="Remove from playlist">✕</button>
+        `;
+        
+        playlistEl.appendChild(li);
+    });
+    
+    playlistStatus.textContent = `(${currentPlaylist.length} songs)`;
+    updateActiveHighlight();
+}
+
+function renderLibrary() {
+    libraryEl.innerHTML = '';
+    
+    const playlistIds = currentPlaylist.map(song => song.id);
+    
+    // Group songs by section
+    const sections = {};
+    allSongs.forEach(song => {
+        const sectionName = song.section || 'Other';
+        if (!sections[sectionName]) {
+            sections[sectionName] = [];
+        }
+        sections[sectionName].push(song);
+    });
+    
+    // Render each section
+    Object.keys(sections).forEach(sectionName => {
+        const songsInSection = sections[sectionName];
+        const allInPlaylist = songsInSection.every(song => playlistIds.includes(song.id));
+        const noneInPlaylist = songsInSection.every(song => !playlistIds.includes(song.id));
+        
+        // Add section header with "Load All" button
+        const header = document.createElement('div');
+        header.className = 'library-header';
+        
+        const headerText = document.createElement('span');
+        headerText.textContent = sectionName;
+        header.appendChild(headerText);
+        
+        // Only show "Load All" button if not all songs are already in the playlist
+        if (!allInPlaylist) {
+            const loadBtn = document.createElement('button');
+            loadBtn.className = 'load-section-btn';
+            loadBtn.textContent = noneInPlaylist ? '➕ Load All' : '➕ Add Missing';
+            loadBtn.onclick = function(e) {
+                e.stopPropagation();
+                loadSectionToPlaylist(sectionName);
+            };
+            header.appendChild(loadBtn);
+        } else {
+            const badge = document.createElement('span');
+            badge.style.cssText = 'font-size:0.6em; color:var(--secondary-text); font-weight:normal;';
+            badge.textContent = '✅ All loaded';
+            header.appendChild(badge);
+        }
+        
+        libraryEl.appendChild(header);
+        
+        // Add songs in this section
+        const ul = document.createElement('ul');
+        songsInSection.forEach(song => {
+            const li = document.createElement('li');
+            const isInPlaylist = playlistIds.includes(song.id);
+            
+            li.innerHTML = `
+                <span class="song-title">${song.title}</span>
+                <span class="song-duration">${song.duration}</span>
+                ${isInPlaylist 
+                    ? '<span class="added-badge">✅ In Playlist</span>'
+                    : `<button class="add-btn" onclick="addToPlaylist(${song.id})" title="Add to playlist">➕</button>`
+                }
+            `;
+            
+            // Click on the song to play it immediately
+            li.addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON') return;
+                
+                const playlistIndex = currentPlaylist.findIndex(s => s.id === song.id);
+                if (playlistIndex !== -1) {
+                    loadTrack(playlistIndex);
+                } else {
+                    addToPlaylist(song.id);
+                    const newIndex = currentPlaylist.findIndex(s => s.id === song.id);
+                    if (newIndex !== -1) {
+                        loadTrack(newIndex);
+                    }
+                }
+            });
+            
+            ul.appendChild(li);
+        });
+        libraryEl.appendChild(ul);
+    });
+    
+    libraryCount.textContent = `(${allSongs.length} songs)`;
+}
+
+function loadSectionToPlaylist(sectionName) {
+    const songsInSection = allSongs.filter(song => song.section === sectionName);
+    let addedCount = 0;
+    
+    songsInSection.forEach(song => {
+        if (!currentPlaylist.some(s => s.id === song.id)) {
+            currentPlaylist.push(song);
+            addedCount++;
+        }
+    });
+    
+    if (addedCount > 0) {
+        savePlaylist();
+        renderPlaylist();
+        renderLibrary();
+        
+        // Auto-play the first song of the section if playlist was empty
+        if (currentPlaylist.length === songsInSection.length) {
+            // Find where the first added song is in the playlist
+            const firstSongIndex = currentPlaylist.findIndex(s => s.id === songsInSection[0].id);
+            if (firstSongIndex !== -1) {
+                loadTrack(firstSongIndex);
+            }
+        }
+    }
+}
+
+function updateActiveHighlight() {
+    const items = playlistEl.querySelectorAll('li');
+    items.forEach((item, index) => {
+        item.classList.toggle('active', index === currentTrackIndex);
+    });
+}
+
+// ============================================================
+// PLAYLIST MANAGEMENT
+// ============================================================
+function addToPlaylist(songId) {
+    const song = getSongById(songId);
+    if (!song) return;
+    if (currentPlaylist.some(s => s.id === songId)) return;
+    
+    currentPlaylist.push(song);
+    savePlaylist();
+    renderPlaylist();
+    renderLibrary();
+}
+
+function removeFromPlaylist(index) {
+    if (index < 0 || index >= currentPlaylist.length) return;
+    
+    currentPlaylist.splice(index, 1);
+    savePlaylist();
+    
+    if (index === currentTrackIndex) {
+        if (currentPlaylist.length === 0) {
+            audio.pause();
+            nowPlaying.textContent = 'No songs in playlist';
+            playBtn.textContent = '▶';
+            renderPlaylist();
+            renderLibrary();
+            return;
+        } else if (index >= currentPlaylist.length) {
+            currentTrackIndex = currentPlaylist.length - 1;
+        } else {
+            currentTrackIndex = index;
+        }
+        loadTrack(currentTrackIndex);
+    } else if (index < currentTrackIndex) {
+        currentTrackIndex--;
+    }
+    
+    renderPlaylist();
+    renderLibrary();
+}
+
+function clearPlaylist() {
+    if (currentPlaylist.length === 0) return;
+    if (!confirm('Remove all songs from the playlist?')) return;
+    
+    currentPlaylist = [];
+    savePlaylist();
+    audio.pause();
+    nowPlaying.textContent = 'No songs in playlist';
+    playBtn.textContent = '▶';
+    renderPlaylist();
+    renderLibrary();
+}
+
+function resetPlaylist() {
+    const defaultSongs = getSongsByIds(DEFAULT_PLAYLIST_IDS);
+    if (defaultSongs.length === 0) return;
+    
+    currentPlaylist = defaultSongs;
+    savePlaylist();
+    currentTrackIndex = 0;
+    loadTrack(0);
+    renderPlaylist();
+    renderLibrary();
+}
+
+// ============================================================
+// PLAYER FUNCTIONS
+// ============================================================
+function loadTrack(index) {
+    if (currentPlaylist.length === 0) {
+        audio.pause();
+        nowPlaying.textContent = 'No songs in playlist';
+        playBtn.textContent = '▶';
+        return;
+    }
+    
+    if (isShuffled) {
+        if (index < 0) index = shuffledOrder.length - 1;
+        if (index >= shuffledOrder.length) index = 0;
+        currentShuffledIndex = index;
+        const actualIndex = shuffledOrder[currentShuffledIndex];
+        currentTrackIndex = actualIndex;
+    } else {
+        if (index < 0) index = currentPlaylist.length - 1;
+        if (index >= currentPlaylist.length) index = 0;
+        currentTrackIndex = index;
+    }
+    
+    const track = currentPlaylist[currentTrackIndex];
+    if (!track) return;
+    
+    audio.src = track.file;
+    nowPlaying.textContent = track.title;
+    playBtn.textContent = '⏸';
+    audio.play();
+    renderPlaylist();
+    renderLibrary();
+}
+
+function togglePlay() {
+    if (currentPlaylist.length === 0) return;
+    
+    if (audio.paused) {
+        audio.play();
+        playBtn.textContent = '⏸';
+    } else {
+        audio.pause();
+        playBtn.textContent = '▶';
+    }
+}
+
+function playNext() {
+    if (currentPlaylist.length === 0) return;
+    
+    if (isShuffled) {
+        loadTrack(currentShuffledIndex + 1);
+    } else {
+        loadTrack(currentTrackIndex + 1);
+    }
+}
+
+function playPrev() {
+    if (currentPlaylist.length === 0) return;
+    
+    if (isShuffled) {
+        loadTrack(currentShuffledIndex - 1);
+    } else {
+        loadTrack(currentTrackIndex - 1);
+    }
+}
+
+function toggleShuffle() {
+    isShuffled = !isShuffled;
+    shuffleBtn.classList.toggle('active', isShuffled);
+    shuffleBtn.style.color = isShuffled ? '#00ffaa' : 'inherit';
+    
+    if (isShuffled) {
+        shuffledOrder = Array.from({length: currentPlaylist.length}, (_, i) => i);
+        for (let i = shuffledOrder.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledOrder[i], shuffledOrder[j]] = [shuffledOrder[j], shuffledOrder[i]];
+        }
+        const currentIndex = shuffledOrder.indexOf(currentTrackIndex);
+        currentShuffledIndex = currentIndex !== -1 ? currentIndex : 0;
+        document.getElementById('playlist-status').textContent = '(🔀 shuffled)';
+    } else {
+        document.getElementById('playlist-status').textContent = `(${currentPlaylist.length} songs)`;
+        if (currentTrackIndex >= currentPlaylist.length) {
+            currentTrackIndex = 0;
+            loadTrack(0);
+        }
+    }
+}
+
+function toggleRepeat() {
+    const modes = ['none', 'all', 'one'];
+    const currentIndex = modes.indexOf(repeatMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    repeatMode = modes[nextIndex];
+    
+    switch(repeatMode) {
+        case 'none':
+            repeatBtn.textContent = '🔁';
+            repeatBtn.style.color = 'inherit';
+            repeatBtn.title = 'Repeat: Off';
+            break;
+        case 'all':
+            repeatBtn.textContent = '🔁';
+            repeatBtn.style.color = '#00ffaa';
+            repeatBtn.title = 'Repeat: All';
+            break;
+        case 'one':
+            repeatBtn.textContent = '🔂';
+            repeatBtn.style.color = '#00ffaa';
+            repeatBtn.title = 'Repeat: One';
+            break;
+    }
+}
+
+function handleSongEnd() {
+    if (currentPlaylist.length === 0) return;
+    
+    switch(repeatMode) {
+        case 'none':
+            if (isShuffled) {
+                if (currentShuffledIndex < shuffledOrder.length - 1) {
+                    playNext();
+                } else {
+                    playBtn.textContent = '▶';
+                }
+            } else {
+                if (currentTrackIndex < currentPlaylist.length - 1) {
+                    playNext();
+                } else {
+                    playBtn.textContent = '▶';
+                }
+            }
+            break;
+        case 'all':
+            if (isShuffled) {
+                if (currentShuffledIndex >= shuffledOrder.length - 1) {
+                    shuffledOrder = Array.from({length: currentPlaylist.length}, (_, i) => i);
+                    for (let i = shuffledOrder.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [shuffledOrder[i], shuffledOrder[j]] = [shuffledOrder[j], shuffledOrder[i]];
+                    }
+                    loadTrack(0);
+                } else {
+                    playNext();
+                }
+            } else {
+                if (currentTrackIndex >= currentPlaylist.length - 1) {
+                    loadTrack(0);
+                } else {
+                    playNext();
+                }
+            }
+            break;
+        case 'one':
+            audio.currentTime = 0;
+            audio.play();
+            break;
+    }
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+volumeControl.addEventListener('input', function() {
+    audio.volume = this.value;
+});
+
+audio.addEventListener('timeupdate', function() {
+    if (audio.duration) {
+        const percent = (audio.currentTime / audio.duration) * 100;
+        progress.style.width = percent + '%';
+        currentTimeDisplay.textContent = formatTime(audio.currentTime);
+        totalTimeDisplay.textContent = formatTime(audio.duration);
+    }
+});
+
+progressBar.addEventListener('click', function(e) {
+    const rect = this.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = x / rect.width;
+    audio.currentTime = percent * audio.duration;
+});
+
+function formatTime(seconds) {
+    if (isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+audio.addEventListener('ended', handleSongEnd);
+audio.addEventListener('play', function() {
+    playBtn.textContent = '⏸';
+});
+audio.addEventListener('pause', function() {
+    playBtn.textContent = '▶';
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    
+    switch(e.key) {
+        case ' ':
+            e.preventDefault();
+            togglePlay();
+            break;
+        case 'ArrowRight':
+            e.preventDefault();
+            playNext();
+            break;
+        case 'ArrowLeft':
+            e.preventDefault();
+            playPrev();
+            break;
+        case 's':
+        case 'S':
+            toggleShuffle();
+            break;
+        case 'r':
+        case 'R':
+            toggleRepeat();
+            break;
+    }
+});
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+function init() {
+    currentPlaylist = getPlaylist();
+    
+    renderPlaylist();
+    renderLibrary();
+    
+    if (currentPlaylist.length > 0) {
+        const savedTrack = localStorage.getItem('lastTrack');
+        const savedTime = localStorage.getItem('lastTime');
+        
+        if (savedTrack !== null && parseInt(savedTrack) < currentPlaylist.length) {
+            currentTrackIndex = parseInt(savedTrack);
+            loadTrack(currentTrackIndex);
+            if (savedTime) {
+                audio.currentTime = parseFloat(savedTime);
+            }
+        } else {
+            loadTrack(0);
+        }
+        
+        const savedShuffle = localStorage.getItem('isShuffled');
+        if (savedShuffle === 'true') {
+            toggleShuffle();
+        }
+        
+        const savedRepeat = localStorage.getItem('repeatMode');
+        if (savedRepeat && ['none', 'all', 'one'].includes(savedRepeat)) {
+            repeatMode = savedRepeat;
+            switch(repeatMode) {
+                case 'all':
+                    repeatBtn.textContent = '🔁';
+                    repeatBtn.style.color = '#00ffaa';
+                    break;
+                case 'one':
+                    repeatBtn.textContent = '🔂';
+                    repeatBtn.style.color = '#00ffaa';
+                    break;
+            }
+        }
+    }
+    
+    window.addEventListener('beforeunload', function() {
+        localStorage.setItem('lastTrack', currentTrackIndex);
+        localStorage.setItem('lastTime', audio.currentTime);
+        localStorage.setItem('repeatMode', repeatMode);
+        localStorage.setItem('isShuffled', isShuffled);
+    });
+}
+
+init();
+</script>

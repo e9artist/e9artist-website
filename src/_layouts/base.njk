@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} | {{ site.title }}</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/about/">About</a>
+        <a href="/blog/">Blog</a>
+        <a href="/music/">Music</a>
+        <a href="/lessons/">Lessons</a>
+	<a href="/downloads/">Downloads</a>
+        <a href="/contact/">Contact</a>
+        <a href="https://venmo.com/EliPage" target="_blank" class="support-nav-link">Support</a>
+    </nav>
+    
+    <main>
+        {{ content | safe }}
+    </main>
+    
+    <footer>
+        <p>© {{ site.author }} 2026</p>
+    </footer>
+</body>
+</html>

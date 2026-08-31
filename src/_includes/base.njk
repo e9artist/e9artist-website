@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} | {{ site.title }}</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Optional: Favicon -->
+    <link rel="icon" type="image/png" href="/images/E9 Logo.png">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <!-- Logo - Left side -->
+            <div class="nav-logo">
+                <a href="/">
+                    <img src="/images/E9 Logo.png" alt="{{ site.title }}" class="logo-img">
+                </a>
+            </div>
+            
+            <!-- Navigation Links - Right side -->
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/about/">About</a>
+                <a href="/blog/">Blog</a>
+                <a href="/music/">Music</a>
+                <a href="/lessons/">Lessons</a>
+                <a href="/downloads/">Downloads</a>
+		<a href="/calendar/">Calendar</a>
+                <a href="/contact/">Contact</a>
+            <a href="https://venmo.com/EliPage" target="_blank" class="support-nav-link">☕ Support</a>
+            </div>
+            
+            <!-- Theme toggle -->
+            <button id="theme-toggle" aria-label="Toggle dark mode">
+                ☀️
+            </button>
+        </div>
+    </nav>
+
+    <!-- ... rest of your content ... -->
+
+    <main>
+        {{ content | safe }}
+    </main>
+
+<footer>
+    <div class="footer-content">
+        <div class="footer-brand">
+            <img src="/images/E9 Logo.png" alt="{{ site.title }}" class="footer-logo">
+            <p>&copy; {{ site.year }} {{ site.author }}</p>
+        </div>
+        <div class="footer-support">
+            <span>Support my work:</span>
+            <a href="https://venmo.com/EliPage" target="_blank" class="footer-support-btn">
+               Tip with Venmo
+            </a>
+        </div>
+    </div>
+</footer>
+
+<script>
+    (function() {
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme');
+        
+        // If there's no saved preference, default to dark
+        if (savedTheme) {
+            html.setAttribute('data-theme', savedTheme);
+            themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        } else {
+            // Default to dark mode
+            html.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '☀️';
+            localStorage.setItem('theme', 'dark'); // Save the preference
+        }
+        
+        // Toggle theme
+        themeToggle.addEventListener('click', function() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
+    })();
+</script>
+</body>
+</html>

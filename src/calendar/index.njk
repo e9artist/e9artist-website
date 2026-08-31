@@ -1,0 +1,68 @@
+---
+title: "Detroit Open Mics Calendar"
+layout: "base.njk"
+---
+
+<h1>Detroit Open Mics Calendar</h1>
+<p>Stay up-to-date with all the open mics happening around Detroit. Add this calendar to your own schedule to never miss an event!</p>
+
+<!-- Calendar Embed Section -->
+<section>
+    <h2>View the Calendar</h2>
+    <div class="calendar-container">
+        <iframe src="https://calendar.google.com/calendar/embed?src=3b73ac8e30abe3ee5c96109800115c5a17061ce5926d54965f0557626829e867%40group.calendar.google.com&ctz=America%2FNew_York" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
+    </div>
+</section>
+
+<!-- Download/Share Section -->
+<section>
+    <h2>Add This Calendar to Your App</h2>
+    <p>Use the public link below to add this calendar directly to Google Calendar, Apple Calendar, Outlook, or any other app that supports iCal feeds.</p>
+    <div class="download-section">
+        <p><strong>🔗 Public Calendar Link:</strong></p>
+        <code>https://calendar.google.com/calendar/embed?src=3b73ac8e30abe3ee5c96109800115c5a17061ce5926d54965f0557626829e867%40group.calendar.google.com&ctz=America%2FNew_York</code>
+        <br><br>
+        <a href="https://calendar.google.com/calendar/ical/3b73ac8e30abe3ee5c96109800115c5a17061ce5926d54965f0557626829e867%40group.calendar.google.com/public/basic.ics" download>📥 Download .ics File</a>
+        <p><small>Note: The download button uses the public iCal address to fetch the latest events. Find this URL in your Google Calendar settings under "Integrate calendar" -> "Public address in iCal format".</small></p>
+    </div>
+</section>
+
+<style>
+/* Simple responsive container for the calendar */
+.calendar-container {
+    position: relative;
+    padding-bottom: 75%; /* 4:3 Aspect Ratio for a good view */
+    height: 0;
+    overflow: hidden;
+    max-width: 100%;
+    margin-bottom: 30px;
+}
+
+.calendar-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.download-section {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin-top: 20px;
+}
+
+.download-section code {
+    word-break: break-all;
+    background: var(--bg-color);
+    padding: 10px;
+    display: block;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: var(--secondary-text);
+}
+</style>
