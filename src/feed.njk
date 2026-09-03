@@ -1,0 +1,50 @@
+---
+permalink: /feed.xml
+eleventyExcludeFromCollections: true
+---
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>{{ site.title }} Feed</title>
+    <link>{{ site.url }}</link>
+    <description>Latest updates from {{ site.title }} - blog posts, new music, and downloads</description>
+    <language>en-us</language>
+    <atom:link href="{{ site.url }}/feed.xml" rel="self" type="application/rss+xml" />
+
+    {% for update in collections.allUpdates | limit(50) %}
+      <item>
+        <title>{{ update.title | escape }}</title>
+        <link>{{ site.url }}{{ update.url }}</link>
+        <guid>{{ site.url }}{{ update.url }}#{{ update.date | dateToRfc822 }}</guid>
+        <pubDate>{{ update.date | dateToRfc822 }}</pubDate>
+        <dc:creator>{{ update.author }}</dc:creator>
+        <description><![CDATA[
+          {% if update.type == "blog" %}
+            <p><strong>📝 New Blog Post</strong></p>
+            <p>{{ update.description }}</p>
+            {% if update.tags %}
+              <p><small>Tags: {{ update.tags | join(", ") }}</small></p>
+            {% endif %}
+            <p><a href="{{ site.url }}{{ update.url }}">Read full post →</a></p>
+          {% elseif update.type == "song" %}
+            <p><strong>🎵 New Song</strong></p>
+            <p><strong>{{ update.title | replace("🎵 ", "") }}</strong></p>
+            {% if update.album %}
+              <p><small>Album: {{ update.album }}</small></p>
+            {% endif %}
+            {% if update.duration %}
+              <p><small>Duration: {{ update.duration }}</small></p>
+            {% endif %}
+            <p>{{ update.description }}</p>
+            <p><a href="{{ site.url }}/music/">Listen Now →</a></p>
+          {% elseif update.type == "download" %}
+            <p><strong>📥 New Download Available</strong></p>
+            <p>{{ update.title | replace("📥 ", "") }}</p>
+            <p>{{ update.description }}</p>
+            <p><a href="{{ site.url }}/downloads/">View Downloads →</a></p>
+          {% endif %}
+        ]]></description>
+      </item>
+    {% endfor %}
+  </channel>
+</rss>

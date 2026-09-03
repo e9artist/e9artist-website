@@ -3,15 +3,21 @@ title: "Music"
 layout: "base.njk"
 ---
 
-<h1>My Music</h1>
-
-<p>Here are some of my recordings. The default playlist features my latest songs. You can customize your playlist by adding or removing songs below!</p>
+<div class="header-section" id="headerSection">
+    <div class="header-toggle">
+        <h1 class="page-title">My Music</h1>
+    </div>
+    <p class="page-description" id="headerDescription" style="font-size: 0.85em; line-height: 1.4; margin-bottom: 10px;">Some of my recordings! The default playlist features my latest songs/mixes with older songs being pushed to this page's library. You can customize your playlist by adding or removing songs below. Your browser will save the playlist for you and best of all, no ads! Click a section name to expand/collapse it. Click the Load All buttons to load entire sections or add individual files by clicking the ➕ button. Also, you can hide this message by pressing that ➕ button next to the song title dirctly below!</p>
+</div>
 
 <section class="music-player">
     <div class="player-controls">
-        <h3 id="now-playing">Higher Dimensions (Alien Thoughts EP)</h3>
-        <audio id="audio-player" controls autoplay>
-            <source src="https://www.dropbox.com/scl/fi/ixe7ej7nn9pi8sule3mh5/1-Higher-Dimensions-by-E9.mp3?rlkey=z6r89fk93fnhxxjir14jm79c6&st=94v061iu&raw=1" type="audio/mpeg">
+        <div class="player-header">
+            <button id="toggleHeaderBtn" class="toggle-header-btn" title="Toggle header">−</button>
+            <h3 id="now-playing">Keep It Movin'</h3>
+        </div>
+        <audio id="audio-player" autoplay>
+            <source src="https://www.dropbox.com/scl/fi/uhnna7uuafykg4o4omlrl/Keep-It-Movin-by-E9-20260902v1.mp3?rlkey=5dnj53awekqvwatmkiwsehbcl&st=r2u77ab3&raw=1" type="audio/mpeg">
             Your browser does not support audio.
         </audio>
         
@@ -58,8 +64,21 @@ layout: "base.njk"
 
     <!-- Library Section -->
     <div class="library-section">
-        <h3>All Songs <span id="library-count">(8 songs)</span></h3>
-        <p class="library-hint">Click ➕ to add a song to your playlist, or click on a song title to play it immediately.</p>
+        <div class="library-header">
+            <div class="library-title-container">
+                <div class="library-title-row">
+                    <h3>All Songs <span id="library-count">(8 songs)</span></h3>
+                    <button id="loadAllBtn" class="load-all-btn" title="Add all songs to playlist">➕ Load All Songs</button>
+                </div>
+                <div class="library-search-row">
+                    <div class="library-search">
+                        <input type="text" id="librarySearch" placeholder="🔍 Search..." class="search-input">
+                        <button id="clearSearchBtn" class="clear-search-btn" style="display:none;">✕</button>
+                    </div>
+                    <p class="library-hint">Click ➕ to add a song to your playlist, or click on a song title to play it immediately.</p>
+                </div>
+            </div>
+        </div>
         <div id="library">
             <!-- Library items with headers will be rendered here -->
         </div>
@@ -67,6 +86,212 @@ layout: "base.njk"
 </section>
 
 <style>
+/* Player header with toggle button */
+.player-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#now-playing {
+    margin: 0;
+    font-size: 1.2em;
+    flex: 1;
+}
+
+.toggle-header-btn {
+    background: var(--card-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    padding: 2px 10px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    line-height: 1.4;
+}
+
+.toggle-header-btn:hover {
+    background: var(--playlist-hover);
+    transform: scale(1.05);
+}
+
+/* Hide header section when collapsed */
+.header-section.collapsed {
+    display: none !important;
+}
+/* Library Search Bar */
+/* Load All Button */
+.library-search-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 5px;
+    width: 100%;
+}
+.library-title-container {
+    flex: 1;
+    min-width: 200px;
+}
+
+.library-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+}
+
+.library-title-row h3 {
+    margin: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.load-all-btn {
+    background: var(--link-color);
+    color: white;
+    border: none;
+    padding: 3px 11px;
+    margin-left: 195px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.7em;
+    font-weight: 600;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.load-all-btn:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+    box-shadow: 0 2px 8px rgba(0, 140, 255, 0.3);
+}
+
+.load-all-btn:active {
+    transform: scale(0.95);
+}
+
+.load-all-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    .library-title-row {
+        flex-wrap: wrap;
+    }
+    
+    .load-all-btn {
+        font-size: 0.65em;
+        padding: 3px 12px;
+    }
+}
+.library-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.library-header > div {
+    flex: 1;
+    min-width: 200px;
+}
+
+.library-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1 1 auto; /* Don't grow, shrink if needed */
+    max-width: 260px; /* Reduced from 400px */
+    min-width: 150px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.85em;
+    transition: border-color 0.3s;
+    min-width: 150px;
+    width: 100%;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--link-color);
+    box-shadow: 0 0 0 2px rgba(0, 140, 255, 0.1);
+}
+
+.search-input::placeholder {
+    color: var(--secondary-text);
+    opacity: 0.7;
+}
+
+.clear-search-btn {
+    background: none;
+    border: none;
+    color: var(--secondary-text);
+    cursor: pointer;
+    font-size: 1.1em;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.clear-search-btn:hover {
+    color: var(--text-color);
+    background: var(--playlist-hover);
+}
+
+/* No results message */
+.no-results {
+    text-align: center;
+    color: var(--secondary-text);
+    padding: 40px 20px;
+    font-size: 1.1em;
+}
+
+.no-results .emoji {
+    font-size: 2em;
+    display: block;
+    margin-bottom: 10px;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .search-input {
+    background: var(--input-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .search-input:focus {
+    border-color: var(--link-color);
+    box-shadow: 0 0 0 2px rgba(102, 179, 255, 0.2);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    .library-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .library-search {
+        max-width: 100%;
+    }
+}
 /* Music Player - Dark mode fixes */
 .player-controls {
     background-color: var(--card-bg);
@@ -177,14 +402,19 @@ audio::-moz-range-thumb {
 
 .library-hint {
     color: var(--secondary-text);
-    font-size: 0.85em;
-    margin-bottom: 15px;
+    font-size: 0.75em;
+    margin: 0;
+    flex: 1 1 150px; /* Takes remaining space */
+    min-width: 100px;
 }
 
 #library-count {
     font-weight: normal;
     font-size: 0.8em;
     color: var(--secondary-text);
+    display: inline-block;
+    min-width: 100px; /* ✅ ADD THIS */
+    text-align: left;
 }
 
 /* Library Section Headers */
@@ -192,8 +422,8 @@ audio::-moz-range-thumb {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 20px;
-    padding: 8px 15px;
+    margin-top: 12px;
+    padding: 6px 12px;
     background-color: var(--playlist-hover);
     border-radius: 20px;
     font-weight: 600;
@@ -237,7 +467,7 @@ audio::-moz-range-thumb {
 
 #playlist li,
 #library li {
-    padding: 10px 15px;
+    padding: 2px 10px;
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     display: flex;
@@ -279,7 +509,34 @@ audio::-moz-range-thumb {
     font-size: 0.85em;
     flex-shrink: 0;
 }
+/* Playlist section name column */
+#playlist li .song-section {
+    color: var(--secondary-text);
+    font-size: 0.7em;
+    opacity: 0.7;
+    flex-shrink: 0;
+    min-width: 80px;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    padding: 0 8px;
+}
 
+#playlist li.active .song-section {
+    color: var(--secondary-text);
+    opacity: 0.8;
+}
+
+@media (max-width: 600px) {
+    #playlist li .song-section {
+        font-size: 0.6em;
+        min-width: 60px;
+        max-width: 80px;
+        padding: 0 4px;
+    }
+}
 #playlist li .remove-btn {
     background: none;
     border: none;
@@ -563,78 +820,168 @@ section.music-player {
         padding: 3px 12px;
     }
 }
+/* Make playlist items clickable */
+#playlist li {
+    cursor: pointer; /* Already has this, but make sure it's there */
+}
+
+/* Optional: Add a subtle hover effect */
+#playlist li:hover:not(.active) {
+    background-color: var(--playlist-hover);
+    border-radius: 4px;
+}
 </style>
 
 <script>
 // ============================================================
+// SECTION CONFIGURATION
+// ============================================================
+const sectionDefaults = {
+    // Default state for each section: true = expanded, false = collapsed
+    "Mix 20260902" : true,
+    "Mix 20260902 NO LEAD" : false,
+    "Mix 20260902 NO DRUMS with CLICK" : false,
+    "Alien Thoughts EP": true,  // Always expanded
+    "Alien Thoughts EP NO LEAD": false, // Start collapsed
+    // Add more sections as you create them
+    // "Other": true // Default for any unspecified sections
+};
+
+// Fallback state for sections not listed above
+const DEFAULT_SECTION_STATE = true; // true = expanded, false = collapsed
+// ============================================================
+// DEFAULT PLAYLIST - Set your default playlist here
+// (Use the song IDs from allSongs)
+// ============================================================
+const DEFAULT_PLAYLIST_IDS = [8, 11, 14]; // Your latest/recommended songs
+// ============================================================
 // PLAYLIST DATA - Add all your songs here
 // ============================================================
 const allSongs = [
+    // 20260902v1 Upload!
+    {
+        id: 8,
+        title: "Keep It Movin'",
+        file: "https://www.dropbox.com/scl/fi/uhnna7uuafykg4o4omlrl/Keep-It-Movin-by-E9-20260902v1.mp3?rlkey=5dnj53awekqvwatmkiwsehbcl&st=2r804dr3&raw=1",
+        duration: "5:34",
+        section: "Mix 20260902"
+    },
+    {
+        id: 9,
+        title: "Keep It Movin' NO DRUMS with CLICK",
+        file: "https://www.dropbox.com/scl/fi/dt46xdwpjym26om2m369l/Keep-It-Movin-by-E9-20260902v1-NO-DRUMS-with-CLICK.mp3?rlkey=m1ha3tww9ry3cunu73knpsdzw&st=edf7j11o&raw=1",
+        duration: "5:42",
+        section: "Mix 20260902 NO DRUMS with CLICK"
+    },
+    {
+        id: 10,
+        title: "Keep It Movin' NO LEAD",
+        file: "https://www.dropbox.com/scl/fi/jlnf6hxzcgqpx4bpro4kp/Keep-It-Movin-by-E9-20260902v1-NO-LEAD.mp3?rlkey=h1bj8pxuq0srlhy1f4ovvwhxi&st=4k6g3yqc&raw=1",
+        duration: "5:42",
+        section: "Mix 20260902 NO LEAD"
+    },
+    {
+        id: 11,
+        title: "5-0",
+        file: "https://www.dropbox.com/scl/fi/ev7kt0padr2zl2p1wec5d/5-0-by-E9-20260902v1.mp3?rlkey=si6o4jyhcwrgl1tdc7p3o2qo5&st=2j8y1vrk&raw=1",
+        duration: "4:34",
+        section: "Mix 20260902"
+    },
+    {
+        id: 12,
+        title: "5-0 NO DRUMS with CLICK",
+        file: "https://www.dropbox.com/scl/fi/q4c500fego5k1iuxphjbx/5-0-by-E9-20260902v1-NO-DRUMS-with-CLICK.mp3?rlkey=t1wqi0mx8fko1afpfy5hpxhzd&st=a8xep77x&raw=1",
+        duration: "4:41",
+        section: "Mix 20260902 NO DRUMS with CLICK"
+    },
+    {
+        id: 13,
+        title: "5-0 NO LEAD",
+        file: "https://www.dropbox.com/scl/fi/gpbc76q0xnlh3cz75n97j/5-0-by-E9-20260902v1-NO-LEAD.mp3?rlkey=6p2og34k5imb5arx6irpjwxmi&st=hhayue1f&raw=1",
+        duration: "4:40",
+        section: "Mix 20260902 NO LEAD"
+    },
+    {
+        id: 14,
+        title: "Hopin'",
+        file: "https://www.dropbox.com/scl/fi/4ci8uwnrbz374882mlnvb/Hopin-by-E9-20260902v1.mp3?rlkey=93pedf4mbpa7fz75ukyrovgs5&st=e3pdrax4&raw=1",
+        duration: "5:29",
+        section: "Mix 20260902"
+    },
+    {
+        id: 15,
+        title: "Hopin' NO DRUMS with CLICK",
+        file: "https://www.dropbox.com/scl/fi/xwpn7tg6ck64kzx3l0qns/Hopin-by-E9-20260902v1-NO-DRUMS-with-CLICK.mp3?rlkey=qvl04vlyww0nlijctagukjvdj&st=lm6ubk21&raw=1",
+        duration: "5:29",
+        section: "Mix 20260902 NO DRUMS with CLICK"
+    },
+    {
+        id: 16,
+        title: "Hopin' NO LEAD",
+        file: "https://www.dropbox.com/scl/fi/9kcnswmgkcvvpxlkulayy/Hopin-by-E9-20260902v1-NO-LEAD.mp3?rlkey=r5p50ojwot8h0nsp8cdl0g557&st=au6xd5gx&raw=1",
+        duration: "5:29",
+        section: "Mix 20260902 NO LEAD"
+    },
+
     // Alien Thoughts EP
     {
         id: 0,
-        title: "Higher Dimensions (Alien Thoughts EP)",
-        file: "https://www.dropbox.com/scl/fi/ixe7ej7nn9pi8sule3mh5/1-Higher-Dimensions-by-E9.mp3?rlkey=z6r89fk93fnhxxjir14jm79c6&st=94v061iu&raw=1",
-        duration: "2:18",
+        title: "Higher Dimensions",
+        file: "https://www.dropbox.com/scl/fi/58skv5diwm67keuhg5rgr/1-Higher-Dimensions-by-E9.mp3?rlkey=jhc8nl9nb05ftvioa2v0702m3&st=qoduupqz&raw=1",
+        duration: "2:11",
         section: "Alien Thoughts EP"
     },
     {
         id: 1,
-        title: "Make Believe (Alien Thoughts EP)",
-        file: "https://www.dropbox.com/scl/fi/c6aaqzlvpb1f6w2zntr2z/2-Make-Believe-by-E9.mp3?rlkey=1u996ttu97hjclzew4mxapbyq&st=0r5jcy08&raw=1",
-        duration: "5:55",
+        title: "Make Believe",
+        file: "https://www.dropbox.com/scl/fi/evdm0lhdcijwb0jfwll9q/2-Make-Believe-by-E9.mp3?rlkey=5z1gnlezgzusx3sodtmr7lp5d&st=8oxelk2y&raw=1",
+        duration: "5:53",
         section: "Alien Thoughts EP"
     },
     {
         id: 2,
-        title: "The Uncanny Valley (Alien Thoughts EP)",
-        file: "https://www.dropbox.com/scl/fi/mkmqqnhdbn94k1qb5v6o2/3-The-Uncanny-Valley-by-E9.mp3?rlkey=ky7p4jo5ijj9vzwsr7zv19k9h&st=ux7tzlj6&raw=1",
-        duration: "5:17",
+        title: "The Uncanny Valley",
+        file: "https://www.dropbox.com/scl/fi/tj26jt5kw82pnpcy42m3d/3-The-Uncanny-Valley-by-E9.mp3?rlkey=xsbtpkxz9po695c2co7wtraez&st=x2vkxjw6&raw=1",
+        duration: "5:15",
         section: "Alien Thoughts EP"
     },
     {
         id: 3,
-        title: "Tearing Down The Temple (Alien Thoughts EP)",
-        file: "https://www.dropbox.com/scl/fi/8aohxek19wby7fq0rqebv/4-Tearing-Down-The-Temple-by-E9.mp3?rlkey=fv70csam7r47ibk4g1s14h2o5&st=nxgq6t00&raw=1",
-        duration: "9:29",
+        title: "Tearing Down The Temple",
+        file: "https://www.dropbox.com/scl/fi/n1262eatejw801iimpqbv/4-Tearing-Down-The-Temple-by-E9.mp3?rlkey=0k33s65h3pe0jkrcjr5l318m8&st=2q4iezaw&raw=1",
+        duration: "9:28",
         section: "Alien Thoughts EP"
     },
     // Backing Tracks
     {
         id: 4,
-        title: "Higher Dimensions (No Guitar Version)",
-        file: "https://www.dropbox.com/scl/fi/nv8b7r1vm1s8tajy6b6u0/Higher-Dimensions-No-Guitar.mp3?rlkey=cqvcmduw1tcjsgre5m3hsjn2e&st=6rqy0wsy&raw=1",
+        title: "Higher Dimensions NO LEAD",
+        file: "https://www.dropbox.com/scl/fi/k880suei460skzkokzrc8/1-Higher-Dimensions-by-E9-NO-LEAD.mp3?rlkey=n2f5tku349wdyrer82xboa1tf&st=m7v0s0j7&raw=1",
         duration: "2:18",
-        section: "Alien Thoughts EP (Backing Tracks)"
+        section: "Alien Thoughts EP NO LEAD"
     },
     {
         id: 5,
-        title: "Make Believe (No Guitar Version)",
-        file: "https://www.dropbox.com/scl/fi/yky7y8nkun4ijbv5apqyi/Make-Believe-No-Guitar-4.mp3?rlkey=sw99znjnwvow3ji8c30xt22m2&st=g4fo7pg8&raw=1",
+        title: "Make Believe NO LEAD",
+        file: "https://www.dropbox.com/scl/fi/tihbrgd1e3w51sv60dne1/2-Make-Believe-by-E9-NO-LEAD.mp3?rlkey=6mwtpth0rq795wpmc211f2o0h&st=gem2p6r2&raw=1",
         duration: "5:55",
-        section: "Alien Thoughts EP (Backing Tracks)"
+        section: "Alien Thoughts EP NO LEAD"
     },
     {
         id: 6,
-        title: "The Uncanny Valley (No Guitar Version)",
-        file: "https://www.dropbox.com/scl/fi/zglq0xort8f1u9tfgtaxq/The-Uncanny-Valley-No-Guitar-v2.mp3?rlkey=tm5oatjtfu9vx29n9qqr196mi&st=rzgoczt6&raw=1",
+        title: "The Uncanny Valley NO LEAD",
+        file: "https://www.dropbox.com/scl/fi/vbf9zvg0eu0bdslnl673u/3-The-Uncanny-Valley-by-E9-NO-LEAD.mp3?rlkey=hf60i5533vun3ip8l2po8lkmq&st=5iwp3ebb&raw=1",
         duration: "5:17",
-        section: "Alien Thoughts EP (Backing Tracks)"
+        section: "Alien Thoughts EP NO LEAD"
     },
     {
         id: 7,
-        title: "Tearing Down The Temple (No Guitar Version)",
-        file: "https://www.dropbox.com/scl/fi/ncmv9ruugocwtlgl6w1cw/TDTT-Master-No-Guitar-v1.mp3?rlkey=9kt3djfh21t7437ewh2rtjd34&st=j1dnphdz&raw=1",
+        title: "Tearing Down The Temple NO LEAD",
+        file: "https://www.dropbox.com/scl/fi/xgs2gyk0vs11apzh2hubs/4-Tearing-Down-The-Temple-by-E9-NO-LEAD.mp3?rlkey=0tzzdv7s82ogrfgoburgppn6p&st=awv3jim1&raw=1",
         duration: "9:29",
-        section: "Alien Thoughts EP (Backing Tracks)"
+        section: "Alien Thoughts EP NO LEAD"
     }
 ];
-
-// ============================================================
-// DEFAULT PLAYLIST - Set your default playlist here
-// (Use the song IDs from allSongs)
-// ============================================================
-const DEFAULT_PLAYLIST_IDS = [0, 1, 2, 3]; // Your latest/recommended songs
 
 // ============================================================
 // PLAYER STATE
@@ -663,6 +1010,15 @@ const progressBar = document.getElementById('progress-bar');
 const currentTimeDisplay = document.getElementById('current-time');
 const totalTimeDisplay = document.getElementById('total-time');
 const volumeControl = document.getElementById('volume-control');
+const librarySearch = document.getElementById('librarySearch');
+const clearSearchBtn = document.getElementById('clearSearchBtn');
+const loadAllBtn = document.getElementById('loadAllBtn');
+
+// ============================================================
+// SECTION STATE TRACKING
+// ============================================================
+// Track manually toggled sections - overrides defaults
+const manualSectionStates = {};
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -698,6 +1054,118 @@ function getPlaylist() {
     const saved = loadSavedPlaylist();
     return saved || getSongsByIds(DEFAULT_PLAYLIST_IDS);
 }
+function toggleSection(sectionName) {
+    const header = document.querySelector(`.library-header[data-section="${sectionName}"]`);
+    if (!header) {
+        console.warn('Header not found for section:', sectionName);
+        return;
+    }
+    
+    let ul = header.nextElementSibling;
+    while (ul && ul.tagName !== 'UL') {
+        ul = ul.nextElementSibling;
+    }
+    
+    if (!ul) {
+        console.warn('UL not found for section:', sectionName);
+        return;
+    }
+    
+    const isExpanded = header.dataset.expanded === 'true';
+    const newState = !isExpanded;
+    header.dataset.expanded = newState ? 'true' : 'false';
+    
+    // ✅ Track manual state
+    manualSectionStates[sectionName] = newState;
+    
+    if (newState) {
+        ul.style.display = '';
+        const icon = header.querySelector('.toggle-icon');
+        if (icon) icon.textContent = '▼';
+    } else {
+        ul.style.display = 'none';
+        const icon = header.querySelector('.toggle-icon');
+        if (icon) icon.textContent = '▶';
+    }
+}
+// ============================================================
+// TOAST NOTIFICATIONS
+// ============================================================
+let toastTimeout = null;
+
+function showToast(message, type = 'info', duration = 3000) {
+    // Create toast container if it doesn't exist
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.style.cssText = `
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+            max-width: 90vw;
+        `;
+        document.body.appendChild(container);
+    }
+    
+    // Remove existing toasts
+    container.innerHTML = '';
+    if (toastTimeout) {
+        clearTimeout(toastTimeout);
+        toastTimeout = null;
+    }
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        background: var(--toast-bg, #333);
+        color: var(--text-color, #fff);
+        border: 1px solid var(--border-color, #555);
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-size: 0.9em;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideDown 0.3s ease;
+        pointer-events: auto;
+        max-width: 90vw;
+        text-align: center;
+    `;
+    
+    // Add type-specific styling
+    if (type === 'success') {
+        toast.style.borderLeft = '4px solid #4CAF50';
+    } else if (type === 'warning') {
+        toast.style.borderLeft = '4px solid #ff9800';
+    } else if (type === 'error') {
+        toast.style.borderLeft = '4px solid #f44336';
+    } else {
+        toast.style.borderLeft = '4px solid #2196F3';
+    }
+    
+    toast.textContent = message;
+    container.appendChild(toast);
+    
+    // Auto-dismiss after duration
+    toastTimeout = setTimeout(() => {
+        if (toast.parentNode) {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 300);
+        }
+        toastTimeout = null;
+    }, duration);
+}
 
 // ============================================================
 // RENDER FUNCTIONS
@@ -716,11 +1184,18 @@ function renderPlaylist() {
         li.dataset.index = index;
         li.className = index === currentTrackIndex ? 'active' : '';
         
+        // Click handler to play the song
+        li.addEventListener('click', function() {
+            loadTrack(index);
+        });
+        
+        // ✅ ADDED: Section name column
         li.innerHTML = `
             <div class="song-info">
                 <span class="play-indicator">▶</span>
                 <span class="song-title">${song.title}</span>
             </div>
+            <span class="song-section">${song.section || ''}</span>
             <span class="song-duration">${song.duration}</span>
             <button class="remove-btn" onclick="removeFromPlaylist(${index})" title="Remove from playlist">✕</button>
         `;
@@ -732,14 +1207,85 @@ function renderPlaylist() {
     updateActiveHighlight();
 }
 
+// ✅ ADD: Search state
+let searchQuery = '';
+
+// ============================================================
+// LOAD ALL FUNCTION - NO NOTIFICATIONS
+// ============================================================
+function loadAllToPlaylist() {
+    // Get fresh reference to the button
+    const btn = document.querySelector('#loadAllBtn');
+    if (!btn || btn.disabled) return;
+    
+    // Disable button briefly to prevent double-clicks
+    btn.disabled = true;
+    btn.textContent = '⏳ Loading...';
+    
+    // Count and add songs
+    let addedCount = 0;
+    const songsToAdd = [];
+    
+    allSongs.forEach(song => {
+        if (!currentPlaylist.some(s => s.id === song.id)) {
+            songsToAdd.push(song);
+            addedCount++;
+        }
+    });
+    
+    if (addedCount > 0) {
+        songsToAdd.forEach(song => currentPlaylist.push(song));
+        savePlaylist();
+        renderPlaylist();
+        renderLibrary();
+        
+        // Auto-play first song if playlist was empty
+        if (currentPlaylist.length === allSongs.length && allSongs.length > 0) {
+            const firstSongId = allSongs[0].id;
+            const index = currentPlaylist.findIndex(s => s.id === firstSongId);
+            if (index !== -1) {
+                loadTrack(index);
+            }
+        }
+    }
+    
+    // Reset button
+    btn.disabled = false;
+    btn.textContent = '➕ Load All Songs';
+}
 function renderLibrary() {
     libraryEl.innerHTML = '';
     
     const playlistIds = currentPlaylist.map(song => song.id);
+    const query = searchQuery.toLowerCase().trim();
     
-    // Group songs by section
+    // Filter songs based on search query
+    let filteredSongs = allSongs;
+    let hasActiveSearch = false;
+    if (query) {
+        filteredSongs = allSongs.filter(song => {
+            const titleMatch = song.title.toLowerCase().includes(query);
+            const sectionMatch = song.section && song.section.toLowerCase().includes(query);
+            const dateMatch = song.date && song.date.toLowerCase().includes(query);
+            return titleMatch || sectionMatch || dateMatch;
+        });
+        hasActiveSearch = true;
+    }
+    
+    if (filteredSongs.length === 0) {
+        libraryEl.innerHTML = `
+            <div class="no-results">
+                <span class="emoji">🔍</span>
+                No songs found matching "<strong>${searchQuery}</strong>"
+            </div>
+        `;
+        libraryCount.textContent = `(${allSongs.length} songs)`;
+        return;
+    }
+    
+    // Group filtered songs by section
     const sections = {};
-    allSongs.forEach(song => {
+    filteredSongs.forEach(song => {
         const sectionName = song.section || 'Other';
         if (!sections[sectionName]) {
             sections[sectionName] = [];
@@ -753,15 +1299,56 @@ function renderLibrary() {
         const allInPlaylist = songsInSection.every(song => playlistIds.includes(song.id));
         const noneInPlaylist = songsInSection.every(song => !playlistIds.includes(song.id));
         
-        // Add section header with "Load All" button
+        // ✅ Determine if this section should be expanded
+        let isExpanded;
+        
+        // If search is active, ALWAYS expand sections that have matches
+        // This overrides manual states during search
+        if (hasActiveSearch) {
+            isExpanded = true;
+        }
+        // Otherwise, check manual states first, then defaults
+        else if (manualSectionStates[sectionName] !== undefined) {
+            isExpanded = manualSectionStates[sectionName];
+        } else {
+            isExpanded = sectionDefaults[sectionName] !== undefined 
+                ? sectionDefaults[sectionName] 
+                : DEFAULT_SECTION_STATE;
+        }
+        
+        // Add section header with toggle
         const header = document.createElement('div');
         header.className = 'library-header';
+        header.style.cursor = 'pointer';
+        header.dataset.section = sectionName;
+        header.dataset.expanded = isExpanded ? 'true' : 'false';
         
+        // Click handler
+        header.addEventListener('click', function(e) {
+            if (e.target.classList.contains('load-section-btn')) return;
+            if (e.target.closest('.load-section-btn')) return;
+            toggleSection(this.dataset.section);
+        });
+        
+        // Header content wrapper
+        const headerContent = document.createElement('div');
+        headerContent.style.cssText = 'display:flex; align-items:center; gap:10px; flex:1;';
+        
+        // Toggle icon
+        const toggleIcon = document.createElement('span');
+        toggleIcon.className = 'toggle-icon';
+        toggleIcon.textContent = isExpanded ? '▼' : '▶';
+        toggleIcon.style.cssText = 'font-size:0.7em; transition:transform 0.2s;';
+        headerContent.appendChild(toggleIcon);
+        
+        // Section name
         const headerText = document.createElement('span');
         headerText.textContent = sectionName;
-        header.appendChild(headerText);
+        headerContent.appendChild(headerText);
         
-        // Only show "Load All" button if not all songs are already in the playlist
+        header.appendChild(headerContent);
+        
+        // Load All button
         if (!allInPlaylist) {
             const loadBtn = document.createElement('button');
             loadBtn.className = 'load-section-btn';
@@ -782,6 +1369,8 @@ function renderLibrary() {
         
         // Add songs in this section
         const ul = document.createElement('ul');
+        ul.style.display = isExpanded ? '' : 'none';
+        
         songsInSection.forEach(song => {
             const li = document.createElement('li');
             const isInPlaylist = playlistIds.includes(song.id);
@@ -795,7 +1384,6 @@ function renderLibrary() {
                 }
             `;
             
-            // Click on the song to play it immediately
             li.addEventListener('click', function(e) {
                 if (e.target.tagName === 'BUTTON') return;
                 
@@ -816,8 +1404,29 @@ function renderLibrary() {
         libraryEl.appendChild(ul);
     });
     
-    libraryCount.textContent = `(${allSongs.length} songs)`;
+    // Update count showing filtered results
+    if (query) {
+        libraryCount.textContent = `(${filteredSongs.length} of ${allSongs.length} songs)`;
+    } else {
+        libraryCount.textContent = `(${allSongs.length} songs)`;
+    }
 }
+
+// ✅ ADD: Search event listener
+librarySearch.addEventListener('input', function() {
+    searchQuery = this.value;
+    // Show/hide clear button
+    clearSearchBtn.style.display = searchQuery ? 'inline-block' : 'none';
+    renderLibrary();
+});
+
+// ✅ ADD: Clear search button
+clearSearchBtn.addEventListener('click', function() {
+    librarySearch.value = '';
+    searchQuery = '';
+    this.style.display = 'none';
+    renderLibrary();
+});
 
 function loadSectionToPlaylist(sectionName) {
     const songsInSection = allSongs.filter(song => song.section === sectionName);
@@ -897,7 +1506,6 @@ function removeFromPlaylist(index) {
 
 function clearPlaylist() {
     if (currentPlaylist.length === 0) return;
-    if (!confirm('Remove all songs from the playlist?')) return;
     
     currentPlaylist = [];
     savePlaylist();
@@ -1083,6 +1691,7 @@ function handleSongEnd() {
 // ============================================================
 // EVENT LISTENERS
 // ============================================================
+
 volumeControl.addEventListener('input', function() {
     audio.volume = this.value;
 });
@@ -1144,8 +1753,50 @@ document.addEventListener('keydown', function(e) {
             break;
     }
 });
-
 // ============================================================
+// HEADER TOGGLE WITH LOCAL STORAGE
+// ============================================================
+const toggleHeaderBtn = document.getElementById('toggleHeaderBtn');
+const headerSection = document.getElementById('headerSection');
+const HEADER_STATE_KEY = 'musicPageHeaderVisible';
+
+// Load saved state or default to visible (true)
+let headerVisible = localStorage.getItem(HEADER_STATE_KEY) !== 'false';
+
+// Apply the saved state on page load
+function applyHeaderState() {
+    if (headerVisible) {
+        headerSection.classList.remove('collapsed');
+        toggleHeaderBtn.textContent = '−';
+        toggleHeaderBtn.title = 'Hide header';
+    } else {
+        headerSection.classList.add('collapsed');
+        toggleHeaderBtn.textContent = '+';
+        toggleHeaderBtn.title = 'Show header';
+    }
+}
+
+// Initial apply
+applyHeaderState();
+
+// Toggle function
+toggleHeaderBtn.addEventListener('click', function() {
+    headerVisible = !headerVisible;
+    
+    if (headerVisible) {
+        headerSection.classList.remove('collapsed');
+        this.textContent = '−';
+        this.title = 'Hide header';
+    } else {
+        headerSection.classList.add('collapsed');
+        this.textContent = '+';
+        this.title = 'Show header';
+    }
+    
+    // Save the state to localStorage
+    localStorage.setItem(HEADER_STATE_KEY, headerVisible);
+});
+/// ============================================================
 // INITIALIZATION
 // ============================================================
 function init() {
@@ -1153,6 +1804,36 @@ function init() {
     
     renderPlaylist();
     renderLibrary();
+    
+    // Remove any existing listeners by cloning and replacing
+    const oldBtn = document.getElementById('loadAllBtn');
+    if (oldBtn) {
+        const newBtn = oldBtn.cloneNode(true);
+        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+        // Get fresh reference and add listener
+        const freshBtn = document.getElementById('loadAllBtn');
+        if (freshBtn) {
+            freshBtn.addEventListener('click', loadAllToPlaylist);
+        }
+    }
+    
+    // Search functionality
+    if (librarySearch) {
+        librarySearch.addEventListener('input', function() {
+            searchQuery = this.value;
+            clearSearchBtn.style.display = searchQuery ? 'inline-block' : 'none';
+            renderLibrary();
+        });
+    }
+    
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+            librarySearch.value = '';
+            searchQuery = '';
+            this.style.display = 'none';
+            renderLibrary();
+        });
+    }
     
     if (currentPlaylist.length > 0) {
         const savedTrack = localStorage.getItem('lastTrack');
@@ -1188,7 +1869,7 @@ function init() {
             }
         }
     }
-    
+
     window.addEventListener('beforeunload', function() {
         localStorage.setItem('lastTrack', currentTrackIndex);
         localStorage.setItem('lastTime', audio.currentTime);

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }} | {{ site.title }}</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="alternate" type="application/rss+xml" title="{{ site.title }} RSS Feed" href="/feed.xml">
     <!-- Optional: Favicon -->
     <link rel="icon" type="image/png" href="/images/E9 Logo.png">
 </head>
@@ -14,20 +15,25 @@
             <!-- Logo - Left side -->
             <div class="nav-logo">
                 <a href="/">
-                    <img src="/images/E9 Logo.png" alt="{{ site.title }}" class="logo-img">
+               <!--     <img src="/images/E9 Logo No Background.png" alt="{{ site.title }}" class="logo-img"> -->
+		    <!-- Light mode logo -->
+        	    <img src="/images/E9 Logo No Background.png" alt="{{ site.title }}" class="logo-img logo-light">
+        	    <!-- Dark mode logo -->
+        	    <img src="/images/E9 Logo No Background White.png" alt="{{ site.title }}" class="logo-img logo-dark">
                 </a>
             </div>
             
             <!-- Navigation Links - Right side -->
             <div class="nav-links">
-                <a href="/">Home</a>
-                <a href="/about/">About</a>
-                <a href="/blog/">Blog</a>
+		<a href="/blog/">Blog</a>
                 <a href="/music/">Music</a>
-                <a href="/lessons/">Lessons</a>
                 <a href="/downloads/">Downloads</a>
 		<a href="/calendar/">Calendar</a>
+		<a href="/tools/">Tools</a>
+		<a href="/lessons/">Lessons</a>
+		<a href="/about/">About</a>
                 <a href="/contact/">Contact</a>
+		<a href="/feed.xml" class="rss-link" title="Subscribe to RSS Feed">📡 RSS</a>
             <a href="https://venmo.com/EliPage" target="_blank" class="support-nav-link">☕ Support</a>
             </div>
             
@@ -42,13 +48,28 @@
 
     <main>
         {{ content | safe }}
+  <!-- Only show share buttons on blog posts -->
+    {% if layout == "base.njk" and tags and tags.includes("blog") %}
+    <div class="share-buttons">
+        <span>Share this post:</span>
+        <a href="https://twitter.com/intent/tweet?text={{ title }}&url={{ site.url }}{{ page.url }}" target="_blank" class="share-btn twitter">🐦 Twitter</a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ site.url }}{{ page.url }}" target="_blank" class="share-btn facebook">📘 Facebook</a>
+       <!-- <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ site.url }}{{ page.url }}" target="_blank" class="share-btn linkedin">🔗 LinkedIn</a>-->
+<button onclick="copyPageUrl()" class="share-btn instagram">📸 Copy Link</button>
+        <a href="mailto:?subject={{ title }}&body=Check out this post: {{ site.url }}{{ page.url }}" class="share-btn email">✉️ Email</a>
+    </div>
+    {% endif %}
     </main>
 
 <footer>
     <div class="footer-content">
         <div class="footer-brand">
             <img src="/images/E9 Logo.png" alt="{{ site.title }}" class="footer-logo">
-            <p>&copy; {{ site.year }} {{ site.author }}</p>
+            <p>&copy; {{ site.year }} {{ site.name }}</p>
+        </div>
+<div class="footer-links">
+            <a href="/feed.xml" class="rss-link" title="Subscribe to RSS Feed">📡 RSS Feed</a>
+            <!-- your existing support link -->
         </div>
         <div class="footer-support">
             <span>Support my work:</span>
@@ -60,6 +81,11 @@
 </footer>
 
 <script>
+function copyPageUrl() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    alert('Link copied to clipboard!');
+}
     (function() {
         const themeToggle = document.getElementById('theme-toggle');
         const html = document.documentElement;
