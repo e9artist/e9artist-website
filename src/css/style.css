@@ -103,18 +103,18 @@ nav {
 }
 /* Light/Dark Mode Logo Switching */
 .logo-light {
-    display: block;
+    display: block !important;
 }
 .logo-dark {
-    display: none;
+    display: none !important;
 }
 
 /* Show dark logo in dark mode, hide light logo */
 [data-theme="dark"] .logo-light {
-    display: none;
+    display: none !important;
 }
 [data-theme="dark"] .logo-dark {
-    display: block;
+    display: block !important;
 }
 .nav-links {
     display: flex;
@@ -895,7 +895,7 @@ code {
     }
 }
 .rss-link {
-    color: var(--link-color);
+    color: var(--link-color) !important;
     text-decoration: none;
     font-size: 0.9em;
     transition: color 0.3s ease;
