@@ -101,6 +101,7 @@ nav {
 .logo-img:hover {
     transform: scale(1.05);
 }
+
 /* Light/Dark Mode Logo Switching */
 .logo-light {
     display: block !important;
@@ -116,6 +117,7 @@ nav {
 [data-theme="dark"] .logo-dark {
     display: block !important;
 }
+
 .nav-links {
     display: flex;
     flex-wrap: wrap;
@@ -186,6 +188,19 @@ a:hover {
     color: var(--link-hover);
 }
 
+/* RSS Link */
+.rss-link {
+    color: var(--link-color) !important;
+    text-decoration: none;
+    font-size: 0.9em;
+    transition: color 0.3s ease;
+}
+
+.rss-link:hover {
+    color: var(--link-hover);
+    text-decoration: underline;
+}
+
 /* Music player styles */
 .music-player {
     max-width: 600px;
@@ -241,7 +256,7 @@ a:hover {
     margin-top: 5px;
 }
 
-/* Controls */
+/* Controls - FIXED: Centered play/pause button */
 .controls {
     display: flex;
     justify-content: center;
@@ -260,6 +275,11 @@ a:hover {
     font-size: 1.2em;
     transition: all 0.3s;
     min-width: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1;
 }
 
 .controls button:hover {
@@ -274,6 +294,11 @@ a:hover {
 #play-btn {
     font-size: 1.5em;
     padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1;
 }
 
 #shuffle-btn.active,
@@ -361,6 +386,7 @@ a:hover {
     color: var(--secondary-text);
     font-size: 0.9em;
 }
+
 .share-buttons {
     margin: 20px 0;
     padding: 10px;
@@ -395,7 +421,7 @@ a:hover {
 .twitter { background: #1DA1F2; }
 .facebook { background: #4267B2; }
 .linkedin { background: #0077B5; }
-.instagram { background: #E4405F; }  /* Instagram brand color */
+.instagram { background: #E4405F; }
 .email { background: #666; }
 
 @media (max-width: 600px) {
@@ -409,6 +435,7 @@ a:hover {
         font-size: 0.8em;
     }
 }
+
 /* Footer */
 footer {
     margin-top: 60px;
@@ -514,267 +541,6 @@ footer {
     background: var(--playlist-hover);
 }
 
-/* Music Player - Dark mode fixes */
-.player-controls {
-    background-color: var(--card-bg);
-    color: var(--text-color);
-    padding: 30px;
-    border-radius: 10px;
-    margin-bottom: 30px;
-    text-align: center;
-    border: 1px solid var(--border-color);
-}
-
-/* Fix for the audio player element itself */
-#audio-player {
-    width: 100%;
-    margin-bottom: 20px;
-    background-color: var(--card-bg);
-    border-radius: 5px;
-}
-
-/* Audio player custom styling for dark mode */
-audio {
-    background-color: var(--card-bg);
-    border-radius: 5px;
-}
-
-/* Style the audio player controls */
-audio::-webkit-media-controls-panel {
-    background-color: var(--card-bg);
-}
-
-audio::-webkit-media-controls-current-time-display,
-audio::-webkit-media-controls-time-remaining-display {
-    color: var(--text-color);
-}
-
-/* Firefox audio player */
-audio::-moz-range-track {
-    background-color: var(--border-color);
-}
-
-audio::-moz-range-thumb {
-    background-color: var(--link-color);
-}
-
-/* Playlist - Fix text colors */
-.playlist {
-    background-color: var(--card-bg);
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-}
-
-.playlist h3 {
-    color: var(--text-color);
-    margin-top: 0;
-    margin-bottom: 15px;
-}
-
-#playlist-status {
-    color: var(--secondary-text);
-}
-
-#playlist {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#playlist li {
-    padding: 12px 15px;
-    border-bottom: 1px solid var(--border-color);
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: background-color 0.2s;
-    position: relative;
-    color: var(--text-color);
-}
-
-#playlist li:hover {
-    background-color: var(--playlist-hover);
-}
-
-#playlist li.active {
-    background-color: var(--active-bg);
-    color: var(--active-text);
-    border-radius: 5px;
-}
-
-#playlist li.active .song-duration {
-    color: var(--secondary-text);
-}
-
-#playlist li.active::before {
-    content: "▶";
-    position: absolute;
-    left: -5px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.7em;
-    color: var(--link-color);
-}
-
-.song-title {
-    color: var(--text-color);
-}
-
-#playlist li.active .song-title {
-    color: var(--active-text);
-}
-
-.song-duration {
-    color: var(--secondary-text);
-    font-size: 0.9em;
-}
-
-/* Now playing text */
-#now-playing {
-    color: var(--text-color);
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 1.2em;
-}
-
-/* Time displays */
-.time-info {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.8em;
-    color: var(--secondary-text);
-    margin-top: 5px;
-}
-
-#current-time,
-#total-time {
-    color: var(--secondary-text);
-}
-
-/* Progress bar */
-.progress-container {
-    margin-bottom: 20px;
-}
-
-.progress-bar {
-    height: 6px;
-    background: var(--border-color);
-    border-radius: 3px;
-    cursor: pointer;
-    position: relative;
-}
-
-.progress {
-    height: 100%;
-    background: var(--link-color);
-    border-radius: 3px;
-    width: 0%;
-    transition: width 0.1s;
-}
-
-/* Controls - Make text visible */
-.controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.controls button {
-    padding: 10px 15px;
-    background: var(--active-bg);
-    color: var(--active-text);
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.2em;
-    transition: all 0.3s;
-    min-width: 50px;
-}
-
-.controls button:hover {
-    background: var(--button-hover);
-    transform: scale(1.05);
-}
-
-.controls button:active {
-    transform: scale(0.95);
-}
-
-#play-btn {
-    font-size: 1.5em;
-    padding: 10px 20px;
-}
-
-#shuffle-btn.active,
-#repeat-btn.active {
-    color: var(--link-color);
-}
-
-/* Volume control */
-.volume-control {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    color: var(--text-color);
-}
-
-.volume-control input[type="range"] {
-    width: 100px;
-    cursor: pointer;
-    background: var(--border-color);
-    accent-color: var(--link-color);
-    -webkit-appearance: none;
-    appearance: none;
-    height: 4px;
-    border-radius: 2px;
-}
-
-.volume-control input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--link-color);
-    cursor: pointer;
-}
-
-.volume-control input[type="range"]::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--link-color);
-    cursor: pointer;
-    border: none;
-}
-
-/* Ensure all text in the player section uses theme colors */
-.music-player {
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.music-player h1,
-.music-player h2,
-.music-player h3,
-.music-player p {
-    color: var(--text-color);
-}
-
-.music-player p {
-    color: var(--text-color);
-}
-
-/* Fix for any remaining white backgrounds */
-section.music-player {
-    background-color: transparent;
-}
-
 /* ============================================
    DOWNLOADS PAGE STYLES
    ============================================ */
@@ -807,7 +573,7 @@ section.music-player {
 .download-section li a:first-child {
     font-weight: 500;
     word-break: break-word;
-    min-width: 0; /* Prevents overflow */
+    min-width: 0;
 }
 
 .download-section li .file-info {
@@ -894,17 +660,7 @@ code {
         white-space: normal;
     }
 }
-.rss-link {
-    color: var(--link-color) !important;
-    text-decoration: none;
-    font-size: 0.9em;
-    transition: color 0.3s ease;
-}
 
-.rss-link:hover {
-    color: var(--link-hover);
-    text-decoration: underline;
-}
 /* Responsive */
 @media (max-width: 768px) {
     .nav-container {
@@ -946,15 +702,27 @@ code {
         align-self: center;
     }
     
+    /* FIXED: Mobile play button centering */
     .controls button {
         padding: 8px 12px;
         font-size: 1em;
         min-width: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        line-height: 1;
     }
     
     #play-btn {
         font-size: 1.2em;
         padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        line-height: 1;
+        min-width: 50px;
     }
     
     .volume-control input[type="range"] {
