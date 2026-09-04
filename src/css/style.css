@@ -209,9 +209,9 @@ a:hover {
 
 .player-controls {
     background-color: var(--card-bg);
-    padding: 30px;
+    padding: 15px 20px;
     border-radius: 10px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     text-align: center;
     border: 1px solid var(--border-color);
 }
@@ -494,6 +494,7 @@ footer {
     display: block;
     margin-left: auto;
     margin-right: auto;
+    z-index: 1;
 }
 
 .hero h1 {
@@ -772,4 +773,16 @@ code {
         padding: 10px 20px;
         font-size: 0.9em;
     }
+}
+
+/* Small text with tighter line spacing */
+.small-text {
+    font-size: 0.75em;
+    line-height: 1.2 !important;
+}
+
+/* Extra small */
+.x-small-text {
+    font-size: 0.65em;
+    line-height: 1.0 !important;
 }

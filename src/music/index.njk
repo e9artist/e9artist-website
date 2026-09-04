@@ -7,7 +7,7 @@ layout: "base.njk"
     <div class="header-toggle">
         <h1 class="page-title">My Music</h1>
     </div>
-    <p class="page-description" id="headerDescription" style="font-size: 0.85em; line-height: 1.4; margin-bottom: 10px;">Some of my recordings! The default playlist features my latest songs/mixes with older songs being pushed to this page's library. You can customize your playlist by adding or removing songs below. Your browser will save the playlist for you and best of all, no ads! Click a section name to expand/collapse it. Click the Load All buttons to load entire sections or add individual files by clicking the ➕ button. Also, you can hide this message by pressing that ➕ button next to the song title dirctly below!</p>
+    <p class="page-description" id="headerDescription" style="font-size: 0.85em; line-height: 1.4; margin-bottom: 10px;">Some of my recordings! The default playlist features my latest songs/mixes with older songs being pushed to this page's library. You can customize your playlist by adding or removing songs below. Your browser will save the playlist for you and best of all, no ads! Click a section name to expand/collapse it. Click the Load All buttons to load entire sections or add individual files by clicking the ➕ button. Search for songs, sections (albums), and prune your search by excluding words with ~. For example, to search for all regular songs, first type ~no <small>(or ~NO; it's case insensitive)</small>. Finally, you can hide this message by pressing the -/+ button next to the song title dirctly below!</p>
 </div>
 
 <section class="music-player">
@@ -74,6 +74,7 @@ layout: "base.njk"
                     <div class="library-search">
                         <input type="text" id="librarySearch" placeholder="🔍 Search..." class="search-input">
                         <button id="clearSearchBtn" class="clear-search-btn" style="display:none;">✕</button>
+<button id="shareSearchBtn" class="share-search-btn" title="Copy shareable link for current search">🔗</button>
                     </div>
                     <p class="library-hint">Click ➕ to add a song to your playlist, or click on a song title to play it immediately.</p>
                 </div>
@@ -86,12 +87,29 @@ layout: "base.njk"
 </section>
 
 <style>
+.share-search-btn {
+    background: var(--card-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 6px 10px;
+    font-size: 1em;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    line-height: 1.4;
+}
+
+.share-search-btn:hover {
+    background: var(--playlist-hover);
+    transform: scale(1.05);
+}
 /* Player header with toggle button */
 .player-header {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 0px;
 }
 
 #now-playing {
@@ -142,6 +160,7 @@ layout: "base.njk"
     align-items: center;
     gap: 12px;
     flex-wrap: nowrap;
+margin-top: 0px;
 }
 
 .library-title-row h3 {
@@ -296,9 +315,10 @@ layout: "base.njk"
 .player-controls {
     background-color: var(--card-bg);
     color: var(--text-color);
-    padding: 30px;
+    padding: 5px 20px;
     border-radius: 10px;
-    margin-bottom: 30px;
+    margin-bottom: 4px;
+    margin-top: 0px;
     text-align: center;
     border: 1px solid var(--border-color);
 }
@@ -339,10 +359,10 @@ audio::-moz-range-thumb {
 /* Playlist Section */
 .playlist-section {
     background-color: var(--card-bg);
-    padding: 20px;
+    padding: 10px 15px;
     border-radius: 10px;
-    border: 1px solid var(--border-color);
-    margin-bottom: 20px;
+    border: 1px dashed var(--border-color);
+    margin-bottom: 5px;
 }
 
 .playlist-header {
@@ -389,7 +409,7 @@ audio::-moz-range-thumb {
 /* Library Section */
 .library-section {
     background-color: var(--card-bg);
-    padding: 20px;
+    padding: 12px 15px;
     border-radius: 10px;
     border: 1px solid var(--border-color);
 }
@@ -422,8 +442,9 @@ audio::-moz-range-thumb {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 12px;
-    padding: 6px 12px;
+    margin-top: 2px;
+margin-bottom: 2px;
+    padding: 4px 12px;
     background-color: var(--playlist-hover);
     border-radius: 20px;
     font-weight: 600;
@@ -653,7 +674,7 @@ audio::-moz-range-thumb {
 
 /* Progress bar */
 .progress-container {
-    margin-bottom: 20px;
+    margin-bottom: 0px;
 }
 
 .progress-bar {
@@ -678,7 +699,7 @@ audio::-moz-range-thumb {
     justify-content: center;
     align-items: center;
     gap: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .controls button {
@@ -722,7 +743,7 @@ audio::-moz-range-thumb {
 }
 
 .volume-control input[type="range"] {
-    width: 100px;
+    width: 200px;
     cursor: pointer;
     background: var(--border-color);
     accent-color: var(--link-color);
@@ -1211,22 +1232,22 @@ function renderPlaylist() {
 let searchQuery = '';
 
 // ============================================================
-// LOAD ALL FUNCTION - NO NOTIFICATIONS
+// LOAD ALL FUNCTION - Loads only visible/filtered songs
 // ============================================================
 function loadAllToPlaylist() {
-    // Get fresh reference to the button
     const btn = document.querySelector('#loadAllBtn');
     if (!btn || btn.disabled) return;
     
-    // Disable button briefly to prevent double-clicks
+    // Get the currently filtered songs
+    const songsToLoad = getFilteredSongs();
+    
     btn.disabled = true;
     btn.textContent = '⏳ Loading...';
     
-    // Count and add songs
     let addedCount = 0;
     const songsToAdd = [];
     
-    allSongs.forEach(song => {
+    songsToLoad.forEach(song => {
         if (!currentPlaylist.some(s => s.id === song.id)) {
             songsToAdd.push(song);
             addedCount++;
@@ -1239,9 +1260,8 @@ function loadAllToPlaylist() {
         renderPlaylist();
         renderLibrary();
         
-        // Auto-play first song if playlist was empty
-        if (currentPlaylist.length === allSongs.length && allSongs.length > 0) {
-            const firstSongId = allSongs[0].id;
+        if (currentPlaylist.length > 0 && currentPlaylist.length === songsToAdd.length) {
+            const firstSongId = songsToAdd[0].id;
             const index = currentPlaylist.findIndex(s => s.id === firstSongId);
             if (index !== -1) {
                 loadTrack(index);
@@ -1249,26 +1269,202 @@ function loadAllToPlaylist() {
         }
     }
     
-    // Reset button
     btn.disabled = false;
     btn.textContent = '➕ Load All Songs';
 }
+// ============================================================
+// HELPER: Get currently filtered songs
+// ============================================================
+function getFilteredSongs() {
+    const query = searchQuery.toLowerCase().trim();
+    
+    if (window._exactMatchMode && window._exactSection && window._exactSong) {
+        const sectionToMatch = window._exactSection.toLowerCase().trim();
+        const songToMatch = window._exactSong.toLowerCase().trim();
+        
+        return allSongs.filter(song => {
+            const songSection = (song.section || '').toLowerCase().trim();
+            const songTitle = song.title.toLowerCase().trim();
+            return songSection === sectionToMatch && songTitle === songToMatch;
+        });
+    }
+    
+    if (!query) {
+        return allSongs;
+    }
+    
+    const searchWords = query.split(/\s+/).filter(word => word.length > 0);
+    const requiredWords = [];
+    const negatedWords = [];
+    
+    searchWords.forEach(word => {
+        if (word.startsWith('~')) {
+            const cleanWord = word.substring(1).toLowerCase();
+            if (cleanWord) negatedWords.push(cleanWord);
+        } else {
+            requiredWords.push(word.toLowerCase());
+        }
+    });
+    
+    if (requiredWords.length === 0 && negatedWords.length > 0) {
+        return allSongs.filter(song => {
+            const searchableText = [
+                song.title.toLowerCase(),
+                song.section ? song.section.toLowerCase() : '',
+                song.date ? song.date.toLowerCase() : ''
+            ].join(' ');
+            return negatedWords.every(negWord => !searchableText.includes(negWord));
+        });
+    }
+    
+    return allSongs.filter(song => {
+        const searchableText = [
+            song.title.toLowerCase(),
+            song.section ? song.section.toLowerCase() : '',
+            song.date ? song.date.toLowerCase() : ''
+        ].join(' ');
+        const hasAllRequired = requiredWords.every(word => searchableText.includes(word));
+        const hasAnyNegated = negatedWords.some(word => searchableText.includes(word));
+        return hasAllRequired && !hasAnyNegated;
+    });
+}
+// ============================================================
+// LOAD TRACK WITHOUT AUTO-PLAYING
+// ============================================================
+function loadTrackSilent(index) {
+    if (currentPlaylist.length === 0) {
+        audio.pause();
+        nowPlaying.textContent = 'No songs in playlist';
+        playBtn.textContent = '▶';
+        return;
+    }
+    
+    if (isShuffled) {
+        if (index < 0) index = shuffledOrder.length - 1;
+        if (index >= shuffledOrder.length) index = 0;
+        currentShuffledIndex = index;
+        const actualIndex = shuffledOrder[currentShuffledIndex];
+        currentTrackIndex = actualIndex;
+    } else {
+        if (index < 0) index = currentPlaylist.length - 1;
+        if (index >= currentPlaylist.length) index = 0;
+        currentTrackIndex = index;
+    }
+    
+    const track = currentPlaylist[currentTrackIndex];
+    if (!track) return;
+    
+    // Load the audio source but don't play
+    audio.src = track.file;
+    nowPlaying.textContent = track.title;
+    // Keep the play button in pause state
+    playBtn.textContent = '▶';
+    // Don't call audio.play()
+    updateActiveHighlight(); // Just update the highlight
+}
+
 function renderLibrary() {
     libraryEl.innerHTML = '';
     
     const playlistIds = currentPlaylist.map(song => song.id);
-    const query = searchQuery.toLowerCase().trim();
+    let query = searchQuery.toLowerCase().trim();
     
-    // Filter songs based on search query
+    // ✅ HANDLE EXACT MATCHING (from URL parameters)
     let filteredSongs = allSongs;
     let hasActiveSearch = false;
-    if (query) {
+    
+    // Check if we're in exact match mode (from URL params)
+    if (window._exactMatchMode && window._exactSection && window._exactSong) {
+        // Filter by exact section name (case-insensitive exact match)
+        const sectionToMatch = window._exactSection.toLowerCase().trim();
+        const songToMatch = window._exactSong.toLowerCase().trim();
+        
         filteredSongs = allSongs.filter(song => {
-            const titleMatch = song.title.toLowerCase().includes(query);
-            const sectionMatch = song.section && song.section.toLowerCase().includes(query);
-            const dateMatch = song.date && song.date.toLowerCase().includes(query);
-            return titleMatch || sectionMatch || dateMatch;
+            const songSection = (song.section || '').toLowerCase().trim();
+            const songTitle = song.title.toLowerCase().trim();
+            
+            const sectionMatch = songSection === sectionToMatch;
+            const songMatch = songTitle === songToMatch;
+            
+            return sectionMatch && songMatch;
         });
+        
+        // If we found exactly one result and autoplay is enabled, load it silently
+        if (filteredSongs.length === 1 && window._autoPlay) {
+            const foundSong = filteredSongs[0];
+            let playlistIndex = currentPlaylist.findIndex(s => s.id === foundSong.id);
+            if (playlistIndex === -1) {
+                currentPlaylist.push(foundSong);
+                savePlaylist();
+                renderPlaylist();
+                playlistIndex = currentPlaylist.length - 1;
+            }
+            
+            setTimeout(() => {
+                if (currentPlaylist.length > 0 && playlistIndex < currentPlaylist.length) {
+                    const track = currentPlaylist[playlistIndex];
+                    audio.src = track.file;
+                    nowPlaying.textContent = track.title;
+                    playBtn.textContent = '▶';
+                    currentTrackIndex = playlistIndex;
+                    updateActiveHighlight();
+                }
+            }, 100);
+        }
+        
+        hasActiveSearch = true;
+        
+    } else if (query) {
+        // ✅ ENHANCED: Split query into words and identify negated terms
+        const searchWords = query.split(/\s+/).filter(word => word.length > 0);
+        const requiredWords = [];
+        const negatedWords = [];
+        
+        // Separate required and negated words
+        searchWords.forEach(word => {
+            if (word.startsWith('~')) {
+                // Remove the ~ and add to negated list
+                const cleanWord = word.substring(1).toLowerCase();
+                if (cleanWord) negatedWords.push(cleanWord);
+            } else {
+                requiredWords.push(word.toLowerCase());
+            }
+        });
+        
+        // If there are no required words, use all non-negated words
+        if (requiredWords.length === 0 && negatedWords.length > 0) {
+            // If only negated words, show all songs that don't have those terms
+            filteredSongs = allSongs.filter(song => {
+                const searchableText = [
+                    song.title.toLowerCase(),
+                    song.section ? song.section.toLowerCase() : '',
+                    song.date ? song.date.toLowerCase() : ''
+                ].join(' ');
+                
+                // All songs where NONE of the negated words appear
+                return negatedWords.every(negWord => !searchableText.includes(negWord));
+            });
+        } else {
+            // Normal search with required words and optional negations
+            filteredSongs = allSongs.filter(song => {
+                // Create a combined searchable text for each song
+                const searchableText = [
+                    song.title.toLowerCase(),
+                    song.section ? song.section.toLowerCase() : '',
+                    song.date ? song.date.toLowerCase() : ''
+                ].join(' ');
+                
+                // Check if ALL required words are found in the searchable text
+                const hasAllRequired = requiredWords.every(word => searchableText.includes(word));
+                
+                // Check if ANY negated words are found (should NOT be found)
+                const hasAnyNegated = negatedWords.some(word => searchableText.includes(word));
+                
+                // Song passes if it has all required words AND no negated words
+                return hasAllRequired && !hasAnyNegated;
+            });
+        }
+        
         hasActiveSearch = true;
     }
     
@@ -1299,15 +1495,12 @@ function renderLibrary() {
         const allInPlaylist = songsInSection.every(song => playlistIds.includes(song.id));
         const noneInPlaylist = songsInSection.every(song => !playlistIds.includes(song.id));
         
-        // ✅ Determine if this section should be expanded
+        // Determine if this section should be expanded
         let isExpanded;
         
-        // If search is active, ALWAYS expand sections that have matches
-        // This overrides manual states during search
         if (hasActiveSearch) {
             isExpanded = true;
         }
-        // Otherwise, check manual states first, then defaults
         else if (manualSectionStates[sectionName] !== undefined) {
             isExpanded = manualSectionStates[sectionName];
         } else {
@@ -1405,26 +1598,46 @@ function renderLibrary() {
     });
     
     // Update count showing filtered results
-    if (query) {
+    if (query || window._exactMatchMode) {
         libraryCount.textContent = `(${filteredSongs.length} of ${allSongs.length} songs)`;
     } else {
         libraryCount.textContent = `(${allSongs.length} songs)`;
     }
 }
 
-// ✅ ADD: Search event listener
+// ✅ Updated: Search input handler
 librarySearch.addEventListener('input', function() {
+    // ✅ If user is typing manually, reset exact match mode
+    if (window._exactMatchMode) {
+        window._exactMatchMode = false;
+        window._exactSection = null;
+        window._exactSong = null;
+        window._autoPlay = false;
+    }
+    
     searchQuery = this.value;
-    // Show/hide clear button
     clearSearchBtn.style.display = searchQuery ? 'inline-block' : 'none';
     renderLibrary();
 });
 
-// ✅ ADD: Clear search button
+// ✅ Updated: Clear search button
 clearSearchBtn.addEventListener('click', function() {
     librarySearch.value = '';
     searchQuery = '';
     this.style.display = 'none';
+    
+    // ✅ RESET exact match flags
+    window._exactMatchMode = false;
+    window._exactSection = null;
+    window._exactSong = null;
+    window._autoPlay = false;
+    
+    // ✅ Clear the URL parameters without reloading
+    if (window.history && window.history.pushState) {
+        const newUrl = window.location.pathname;
+        window.history.pushState({}, '', newUrl);
+    }
+    
     renderLibrary();
 });
 
@@ -1454,6 +1667,132 @@ function loadSectionToPlaylist(sectionName) {
         }
     }
 }
+// ============================================================
+// URL SEARCH PARAMETER HANDLING
+// ============================================================
+// ============================================================
+// URL SEARCH PARAMETER HANDLING - ENHANCED
+// ============================================================
+function getSearchParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return {
+        search: urlParams.get('search') || '',
+        searchAlbum: urlParams.get('searchalbum') || '',
+        searchSong: urlParams.get('searchsong') || '',
+        autoplay: urlParams.get('autoplay') === 'true' || false
+    };
+}
+
+function handleSearchParams() {
+    const params = getSearchParams();
+    let searchTerm = '';
+    
+    // Priority 1: If both album and song are specified, do exact matching
+    if (params.searchAlbum && params.searchSong) {
+        const exactSection = decodeURIComponent(params.searchAlbum).trim();
+        const exactSong = decodeURIComponent(params.searchSong).trim();
+        
+        window._exactMatchMode = true;
+        window._exactSection = exactSection;
+        window._exactSong = exactSong;
+        window._autoPlay = params.autoplay || false;
+        
+        searchTerm = `"${exactSection}" → "${exactSong}"`;
+        
+    } else if (params.search) {
+        // Normal search
+        searchTerm = decodeURIComponent(params.search);
+        window._exactMatchMode = false;
+        window._exactSection = null;
+        window._exactSong = null;
+        window._autoPlay = params.autoplay || false;
+    } else {
+        window._exactMatchMode = false;
+        window._exactSection = null;
+        window._exactSong = null;
+        window._autoPlay = false;
+        return;
+    }
+    
+    // Populate the search input
+    const searchInput = document.getElementById('librarySearch');
+    if (searchInput) {
+        searchInput.value = searchTerm;
+        searchQuery = searchTerm;
+        const clearBtn = document.getElementById('clearSearchBtn');
+        if (clearBtn) {
+            clearBtn.style.display = 'inline-block';
+        }
+        renderLibrary();
+    }
+}
+// ============================================================
+// SHAREABLE SEARCH LINK - UPDATED
+// ============================================================
+function getShareableLink() {
+    const searchInput = document.getElementById('librarySearch');
+    
+    // If we're in exact match mode, use those parameters
+    if (window._exactMatchMode && window._exactSection && window._exactSong) {
+        const encodedSection = encodeURIComponent(window._exactSection);
+        const encodedSong = encodeURIComponent(window._exactSong);
+        let link = `${window.location.origin}${window.location.pathname}?searchalbum=${encodedSection}&searchsong=${encodedSong}`;
+        if (window._autoPlay) {
+            link += '&autoplay=true';
+        }
+        return link;
+    }
+    
+    // Otherwise, use the regular search
+    if (searchInput && searchInput.value.trim()) {
+        const encoded = encodeURIComponent(searchInput.value.trim());
+        let link = `${window.location.origin}${window.location.pathname}?search=${encoded}`;
+        if (window._autoPlay) {
+            link += '&autoplay=true';
+        }
+        return link;
+    }
+    
+    return window.location.href;
+}
+
+function copyShareableLink() {
+    const link = getShareableLink();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(() => {
+            showToast('Shareable link copied to clipboard! 📋', 'success');
+        }).catch(() => {
+            copyLinkFallback(link);
+        });
+    } else {
+        copyLinkFallback(link);
+    }
+}
+
+function copyLinkFallback(link) {
+    const textarea = document.createElement('textarea');
+    textarea.value = link;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        showToast('Shareable link copied to clipboard! 📋', 'success');
+    } catch (err) {
+        showToast('Copy failed. Please copy the URL manually.', 'error');
+    }
+    document.body.removeChild(textarea);
+}
+
+// Share button click handler
+document.addEventListener('DOMContentLoaded', function() {
+    const shareBtn = document.getElementById('shareSearchBtn');
+    if (shareBtn) {
+        shareBtn.addEventListener('click', copyShareableLink);
+    }
+});
+
 
 function updateActiveHighlight() {
     const items = playlistEl.querySelectorAll('li');
@@ -1557,9 +1896,17 @@ function loadTrack(index) {
     audio.src = track.file;
     nowPlaying.textContent = track.title;
     playBtn.textContent = '⏸';
-    audio.play();
+    // ✅ Try to play, but catch any errors silently
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(() => {
+            // Silent catch - the user can click play manually
+            playBtn.textContent = '▶';
+        });
+    }
     renderPlaylist();
     renderLibrary();
+    setTimeout(savePlayerState, 100);
 }
 
 function togglePlay() {
@@ -1615,6 +1962,7 @@ function toggleShuffle() {
             loadTrack(0);
         }
     }
+    savePlayerState();
 }
 
 function toggleRepeat() {
@@ -1640,6 +1988,7 @@ function toggleRepeat() {
             repeatBtn.title = 'Repeat: One';
             break;
     }
+    savePlayerState();
 }
 
 function handleSongEnd() {
@@ -1687,7 +2036,104 @@ function handleSongEnd() {
             break;
     }
 }
+// ============================================================
+// PLAYER STATE MANAGEMENT
+// ============================================================
 
+// Save all player state
+function savePlayerState() {
+    try {
+        const state = {
+            volume: audio.volume,
+            isPlaying: !audio.paused,
+            currentTime: audio.currentTime,
+            lastTrack: currentTrackIndex,
+            repeatMode: repeatMode,
+            isShuffled: isShuffled
+        };
+        localStorage.setItem('playerState', JSON.stringify(state));
+    } catch (e) {
+        console.warn('Failed to save player state:', e);
+    }
+}
+
+// Restore all player state
+function restorePlayerState() {
+    try {
+        const saved = localStorage.getItem('playerState');
+        if (!saved) return false;
+        
+        const state = JSON.parse(saved);
+        
+        // Restore volume
+        if (state.volume !== undefined) {
+            audio.volume = state.volume;
+            volumeControl.value = state.volume;
+        }
+        
+        // Restore repeat mode
+        if (state.repeatMode) {
+            repeatMode = state.repeatMode;
+            switch(repeatMode) {
+                case 'all':
+                    repeatBtn.textContent = '🔁';
+                    repeatBtn.style.color = '#00ffaa';
+                    break;
+                case 'one':
+                    repeatBtn.textContent = '🔂';
+                    repeatBtn.style.color = '#00ffaa';
+                    break;
+                default:
+                    repeatBtn.textContent = '🔁';
+                    repeatBtn.style.color = 'inherit';
+                    break;
+            }
+        }
+        
+        // Restore shuffle
+        if (state.isShuffled !== undefined) {
+            isShuffled = state.isShuffled;
+            shuffleBtn.classList.toggle('active', isShuffled);
+            shuffleBtn.style.color = isShuffled ? '#00ffaa' : 'inherit';
+        }
+        
+        return true;
+    } catch (e) {
+        console.warn('Failed to restore player state:', e);
+        return false;
+    }
+}
+
+// Save state on page unload
+window.addEventListener('beforeunload', function() {
+    savePlayerState();
+});
+
+// Save state periodically when playing
+let stateSaveInterval = null;
+audio.addEventListener('play', function() {
+    playBtn.textContent = '⏸';
+    savePlayerState();
+    // Start periodic saving while playing
+    if (stateSaveInterval) clearInterval(stateSaveInterval);
+    stateSaveInterval = setInterval(savePlayerState, 5000);
+});
+
+audio.addEventListener('pause', function() {
+    playBtn.textContent = '▶';
+    savePlayerState();
+    // Stop periodic saving when paused
+    if (stateSaveInterval) {
+        clearInterval(stateSaveInterval);
+        stateSaveInterval = null;
+    }
+});
+
+// Save state on volume change
+volumeControl.addEventListener('input', function() {
+    audio.volume = this.value;
+    savePlayerState();
+});
 // ============================================================
 // EVENT LISTENERS
 // ============================================================
@@ -1804,6 +2250,7 @@ function init() {
     
     renderPlaylist();
     renderLibrary();
+    handleSearchParams();
     
     // Remove any existing listeners by cloning and replacing
     const oldBtn = document.getElementById('loadAllBtn');
@@ -1835,6 +2282,49 @@ function init() {
         });
     }
     
+    // ✅ RESTORE PLAYER STATE (volume, play state, etc.)
+    const savedState = localStorage.getItem('playerState');
+    if (savedState) {
+        try {
+            const state = JSON.parse(savedState);
+            // Restore volume
+            if (state.volume !== undefined) {
+                audio.volume = state.volume;
+                volumeControl.value = state.volume;
+            }
+            // Restore repeat mode
+            if (state.repeatMode) {
+                repeatMode = state.repeatMode;
+                switch(repeatMode) {
+                    case 'all':
+                        repeatBtn.textContent = '🔁';
+                        repeatBtn.style.color = '#00ffaa';
+                        break;
+                    case 'one':
+                        repeatBtn.textContent = '🔂';
+                        repeatBtn.style.color = '#00ffaa';
+                        break;
+                    default:
+                        repeatBtn.textContent = '🔁';
+                        repeatBtn.style.color = 'inherit';
+                        break;
+                }
+            }
+            // Restore shuffle
+            if (state.isShuffled !== undefined) {
+                isShuffled = state.isShuffled;
+                shuffleBtn.classList.toggle('active', isShuffled);
+                shuffleBtn.style.color = isShuffled ? '#00ffaa' : 'inherit';
+                if (isShuffled) {
+                    document.getElementById('playlist-status').textContent = '(🔀 shuffled)';
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to restore player state:', e);
+        }
+    }
+    
+    // Load the saved track
     if (currentPlaylist.length > 0) {
         const savedTrack = localStorage.getItem('lastTrack');
         const savedTime = localStorage.getItem('lastTime');
@@ -1847,6 +2337,28 @@ function init() {
             }
         } else {
             loadTrack(0);
+        }
+        
+        // ✅ Restore play state after track is loaded
+        if (savedState) {
+            try {
+                const state = JSON.parse(savedState);
+                if (state.isPlaying) {
+                    audio.play().catch(() => {
+                        // Autoplay blocked - user will need to click play
+                        playBtn.textContent = '▶';
+                    });
+                } else {
+                    audio.pause();
+                    playBtn.textContent = '▶';
+                }
+                // Restore current time if not already set
+                if (state.currentTime && !savedTime) {
+                    audio.currentTime = state.currentTime;
+                }
+            } catch (e) {
+                console.warn('Failed to restore play state:', e);
+            }
         }
         
         const savedShuffle = localStorage.getItem('isShuffled');
@@ -1870,11 +2382,22 @@ function init() {
         }
     }
 
+    // ✅ Save state on page unload
     window.addEventListener('beforeunload', function() {
-        localStorage.setItem('lastTrack', currentTrackIndex);
-        localStorage.setItem('lastTime', audio.currentTime);
-        localStorage.setItem('repeatMode', repeatMode);
-        localStorage.setItem('isShuffled', isShuffled);
+        // Save all player state
+        try {
+            const state = {
+                volume: audio.volume,
+                isPlaying: !audio.paused,
+                currentTime: audio.currentTime,
+                lastTrack: currentTrackIndex,
+                repeatMode: repeatMode,
+                isShuffled: isShuffled
+            };
+            localStorage.setItem('playerState', JSON.stringify(state));
+        } catch (e) {
+            console.warn('Failed to save player state:', e);
+        }
     });
 }
 

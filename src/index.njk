@@ -6,7 +6,13 @@ layout: "base.njk"
 <!-- Hero Section with Large Logo -->
 <section class="hero">
     <div class="hero-content">
-        <img src="/images/E9 Logo.png" alt="{{ site.title }}" class="hero-logo">
+        <div class="logo-container">
+            <!-- Pulsating Glow Behind Logo -->
+            <div class="glow-sphere" id="morseGlow"></div>
+    	    <!-- Inner Glow (directly behind logo) -->
+    	    <div class="inner-glow" id="innerGlow"></div>
+            <img src="/images/E9 Logo No Background.png" alt="{{ site.title }}" class="hero-logo">
+	</div>
         <!-- <h1>{{ site.title }}</h1> -->
         <p class="tagline">{{ site.tagline }}</p>
         <div class="hero-cta">
@@ -16,26 +22,454 @@ layout: "base.njk"
     </div>
 </section>
 
-<p>Hi, I'm {{ site.author }}. I'm a guitarist and electronics enthusiast. As you can see, my website is still very much in its infancy so please forgive its sparseness! I plan on adding a ton of stuff, including downloadable audio files of my songs, tablature I've made over the years, and write-ups of various electronics projects of mine. If you'd like to get ahold of me, the best way is to check out my <a href="/contact/">Contact</a> page.</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Hi, I'm <a href="https://www.instagram.com/e9artist" title="E9 Instagram Account" target="_blank"><big><big>{{ site.author }}</big></big></a>. I'm a <big><b>solo electric guitarist</b></big> and <big><b>electronics enthusiast</b></big>. My website is still very new! I plan on adding a ton of stuff, including downloadable audio files of my songs, tablature I've made over the years, and write-ups of various electronics projects of mine. For example, if you're looking for my <a href="/calendar/"><b>E9 Detroit Open Mic Calendar</b></a> then you've come to the right spot! I've also recently started accepting students for <a href="/lessons/"><b>guitar lessons</b></a>! See my <a href="/music/"><b>Music</b></a> page to hear examples of my playing and check out my <a href="/downloads/"><b>Downloads</b></a> page if you like what you hear. If you'd like to get ahold of me, the best way is to check out my <a href="/contact/"><b>Contact</b></a> page. Subscribe to <a href="/feed.xml" class="rss-feed-link" title="Subscribe to RSS Feed"><b>my 📡 RSS feed</b></a> to stay up-to-date, too. Again, I'm still quite new to the whole "maintaining a website" thing so please forgive any hiccups! And expect a lot more content soon!</p>
+
+<section>
+    <div><h2>Latest Uploaded Song: <small><small> Keep It Movin' <a href="https://www.dropbox.com/scl/fi/8hels4bu1e7wg5w9m4qns/Keep-It-Movin-by-E9-20260902v1.wav?rlkey=bhm26i0f7ob22evdjzprchx60&st=itgshjzp&dl=1" target="_blank"">WAV </a><t><small> or </small></t><a href="https://www.dropbox.com/scl/fi/uhnna7uuafykg4o4omlrl/Keep-It-Movin-by-E9-20260902v1.mp3?rlkey=5dnj53awekqvwatmkiwsehbcl&st=r2u77ab3&dl=1" target="_blank">MP3</a></small></small></h2>
+</div>
+    <audio controls>
+        <source src="https://www.dropbox.com/scl/fi/uhnna7uuafykg4o4omlrl/Keep-It-Movin-by-E9-20260902v1.mp3?rlkey=5dnj53awekqvwatmkiwsehbcl&st=r2u77ab3&raw=1" type="audio/mpeg">
+        Your browser does not support audio.
+    </audio>
+</section>
 
 <section>
     <h2>Latest Blog Posts</h2>
     <ul>
     {% for post in collections.blog | reverse | limit(3) %}
         <li>
-            <a href="{{ post.url }}">{{ post.data.title }}</a>
+            <a href="{{ post.url }}"><b>{{ post.data.title }}</b></a>
             <time>{{ post.date | readableDate }}</time>
         </li>
     {% endfor %}
     </ul>
-    <a href="/blog/">View all posts →</a>
+    <a href="/blog/"><b>View all posts →</b></a>
 </section>
-<!--
-<section>
-    <h2>Listen to My Music</h2>
-    <audio controls>
-        <source src="https://www.dropbox.com/scl/fi/nv8b7r1vm1s8tajy6b6u0/Higher-Dimensions-No-Guitar.mp3?rlkey=cqvcmduw1tcjsgre5m3hsjn2e&st=6rqy0wsy&raw=1" type="audio/wav">
-        Your browser does not support audio.
-    </audio>
-</section>
--->
+<style>
+
+/* The glow element - with smooth transitions */
+/*.glow-sphere {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 210%;
+    height: 120%;
+    border-radius: 50%;
+    background: radial-gradient(circle, 
+        rgba(255, 255, 255, 0.8) 0%, 
+        rgba(255, 255, 255, 0.4) 30%, 
+        rgba(255, 255, 255, 0) 70%
+    );
+    filter: blur(30px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.3;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}*/
+/* The glow element - now a rectangle */
+/*.glow-sphere {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;        
+    height: 80%;        
+    border-radius: 0;   
+    background: radial-gradient(
+        ellipse at center,  
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(255, 255, 255, 0.4) 40%,
+        rgba(255, 255, 255, 0) 80%
+    );
+    filter: blur(30px);   
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.3;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+*/
+/* ============================================================ */
+/* MORSE CODE GLOW - Hero Logo Styling                          */
+/* ============================================================ */
+
+/* ============================================================ */
+/* MORSE CODE GLOW - BOX SHADOW APPROACH (MOST RELIABLE)       */
+/* ============================================================ */
+
+.logo-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 10px;
+    width: 300px;      /* Your logo's max-width */
+    height: auto;
+}
+
+/* The glow element - forced rectangle with box-shadow */
+.glow-sphere {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 298px !important; /*272*/
+    height: 186px !important;/*193*/
+    border-radius: 0 !important;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.1;
+    transition: opacity 2.7s ease-in-out, 
+                transform 2.7s ease-in-out,
+		box-shadow 2.7s ease-in-out !important;
+    /* ✅ RECTANGULAR GLOW WITH BOX-SHADOW */
+    box-shadow: 
+        0 0 30px 15px rgba(255, 255, 255, 0.9),
+        0 0 60px 30px rgba(255, 255, 255, 0.4),
+        0 0 90px 50px rgba(255, 255, 255, 0.15) !important;
+    background: transparent !important;
+}
+
+/* Glow ON - bright */
+.glow-sphere.on {
+    opacity: 0.88 !important;
+/*filter: blur(20px);*/
+    transform: translate(-50%, -50%) scale(0.8) !important;
+    box-shadow: 
+	/*inset 0 0 60px 100px rgba(255, 255, 255, 0.9),*/
+        0 0 80px 15px rgba(255, 255, 255, 0.9),
+        0 0 60px 30px rgba(255, 255, 255, 0.4),
+        0 0 30px 60px rgba(255, 255, 255, 0.15) !important;
+    transition: opacity 2.7s ease-out, 
+                transform 2.7s ease-out, 
+                box-shadow 2s ease-out !important;
+}
+.glow-sphere.on-fast {
+    opacity: 0.88 !important;
+/*filter: blur(20px);*/
+    transform: translate(-50%, -50%) scale(0.8) !important;
+    box-shadow: 
+	/*inset 0 0 60px 100px rgba(255, 255, 255, 0.9),*/
+        0 0 80px 15px rgba(255, 255, 255, 0.9),
+        0 0 60px 30px rgba(255, 255, 255, 0.4),
+        0 0 30px 60px rgba(255, 255, 255, 0.15) !important;
+    transition: opacity 2s ease-in-out, 
+                transform 2s ease-in-out, 
+                box-shadow 2s ease-out !important;
+}
+
+/* Glow OFF - dim */
+.glow-sphere.off {
+    opacity: 0.72 !important;
+/*filter: blur(0px);*/
+    transform: translate(-50%, -50%) scale(0.74) !important;
+    box-shadow:
+	/*inset 0 0 60px 100px rgba(255, 255, 255, 0.75),*/
+        0 0 50px 30px rgba(255, 255, 255, 0.9),
+        0 0 60px 30px rgba(255, 255, 255, 0.4),
+        0 0 60px 60px rgba(255, 255, 255, 0.15) !important;
+    transition: opacity 2s ease-in, 
+                transform 2s ease-in, 
+                box-shadow 2s ease-in !important;
+}
+
+/* Word gap - blue glow */
+.glow-sphere.word-gap {
+    opacity: 0.88 !important;
+    transform: translate(-50%, -50%) scale(0.8) !important;
+    box-shadow:
+        0 0 80px 20px rgba(100, 200, 255, 0.6),
+        0 0 60px 40px rgba(100, 200, 255, 0.3),
+        0 0 30px 60px rgba(100, 200, 255, 0.1) !important;
+    transition: opacity 2s ease-in-out, 
+                transform 2s ease-in-out, 
+                box-shadow 2s ease-in-out !important;
+}
+
+/* Optional: Purple word gap */
+.glow-sphere.word-gap-purple {
+    opacity: 0.5 !important;
+    transform: translate(-50%, -50%) scale(0.85) !important;
+    box-shadow: 
+        0 0 50px 20px rgba(180, 100, 255, 0.6),
+        0 0 100px 40px rgba(180, 100, 255, 0.3),
+        0 0 180px 60px rgba(180, 100, 255, 0.1) !important;
+    transition: opacity 2.7s ease-in-out, 
+                transform 2.7s ease-in-out, 
+                box-shadow 2.7s ease-in-out !important;
+}
+
+/* Optional: Amber word gap */
+.glow-sphere.word-gap-amber {
+    opacity: 0.5 !important;
+    transform: translate(-50%, -50%) scale(0.85) !important;
+    box-shadow: 
+        0 0 50px 20px rgba(255, 180, 50, 0.6),
+        0 0 100px 40px rgba(255, 180, 50, 0.3),
+        0 0 180px 60px rgba(255, 180, 50, 0.1) !important;
+    transition: opacity 2.7s ease-in-out, 
+                transform 2.7s ease-in-out, 
+                box-shadow 2.7s ease-in-out !important;
+}
+/* Hero Logo - sits on top of the glow */
+.hero-logo {
+    position: relative;
+    max-width: 300px;
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    z-index: 1;
+}
+
+/* Optional: Add a pulsing background animation when not in Morse mode */
+.glow-sphere.idle {
+    animation: pulseIdle 3s ease-in-out infinite;
+}
+
+@keyframes pulseIdle {
+    0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.5; }
+}
+/* Inner Glow - directly behind logo */
+.inner-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 272px !important;
+    height: 193px !important;
+    border-radius: 0 !important;
+    pointer-events: none;
+    z-index: 0.8;
+    opacity: 1;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(255, 255, 255, 0.9) 60%,
+        rgba(255, 255, 255, 0.2) 100%
+    );
+    transition: background 2.7s ease-in-out, opacity 2.7s ease-in-out !important;
+}
+
+/* When glow is ON, show the inner glow */
+.glow-sphere.on ~ .inner-glow {
+    opacity: 1 !important;
+    background: rgba(255, 255, 255, 1);
+transition: background 0.2s ease-in-out,
+	    opacity 0.2s ease-in-out !important;
+}
+/* When glow is ON, show the inner glow */
+.glow-sphere.on-fast ~ .inner-glow {
+    opacity: 1 !important;
+    background: rgba(255, 255, 255, 1);
+transition: background 2s ease-in-out,
+	    opacity 2s ease-in-out !important;
+}
+.glow-sphere.off ~ .inner-glow {
+    opacity: 1 !important;
+    background: rgba(215, 215, 215, 1);
+transition: background 2s ease-in-out,
+	    opacity 2s ease-in-out !important;
+}
+
+/* You can also add color to the inner glow during word gaps */
+.glow-sphere.word-gap ~ .inner-glow {
+    opacity: 1 !important;
+    background: rgba(100, 200, 255, 1);
+    transition: opacity 2s ease-in-out,
+		background 2s ease-in-out !important;
+}
+</style>
+
+<script>
+// ============================================================
+// MORSE CODE GLOW - CSS CLASSES APPROACH
+// ============================================================
+
+function textToMorse(text) {
+    const morseMap = {
+        'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.',
+        'F': '..-.', 'G': '--.', 'H': '....', 'I': '..', 'J': '.---',
+        'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---',
+        'P': '.--.', 'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-',
+        'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-', 'Y': '-.--',
+        'Z': '--..',
+        '0': '-----', '1': '.----', '2': '..---', '3': '...--', '4': '....-',
+        '5': '.....', '6': '-....', '7': '--...', '8': '---..', '9': '----.',
+        ' ': ' '
+    };
+    return text.toUpperCase().split('').map(char => morseMap[char] || '').join(' ');
+}
+
+function startMorseGlow() {
+    const glow = document.getElementById('morseGlow');
+    if (!glow) {
+        console.warn('Glow element not found!');
+        return;
+    }
+    
+    const message = "E9";
+    const morse = textToMorse(message);
+    
+    let isPlaying = true;
+    let timeoutId = null;
+    
+    // ⏱️ Timing values
+    const DOT_DURATION = 2500;
+    const DASH_DURATION = 7500;
+    const SYMBOL_GAP = 2500;
+    const SYMBOL_GAP_LONG = 3;
+    const LETTER_GAP = 0;
+    const WORD_GAP = 3000;
+    
+    // ✅ Clear all classes and set base state
+    function setGlowState(state) {
+        // Remove all state classes
+        glow.classList.remove('on', 'on-fast', 'off', 'word-gap', 'word-gap-purple', 'word-gap-amber');
+        // Add the new state
+        if (state) {
+            glow.classList.add(state);
+        }
+    }
+    
+    // ✅ Glow ON
+    function glowOn() {
+        setGlowState('on');
+    }
+    // ✅ Glow ON
+    function glowOnFast() {
+        setGlowState('on-fast');
+    }
+    
+    // ✅ Glow OFF (dim)
+    function glowOff() {
+        setGlowState('off');
+    }
+    
+    // ✅ Word gap - change color
+    function glowWordGap() {
+        // Choose your word gap color here!
+        setGlowState('word-gap');  // or 'word-gap-purple' or 'word-gap-amber'
+    }
+    
+    // Main sequence player
+    function playSequence() {
+        if (!isPlaying) return;
+        
+        let currentIndex = 0;
+        
+        function playNext() {
+            if (!isPlaying) return;
+            
+            if (currentIndex >= morse.length) {
+                currentIndex = 0;
+                timeoutId = setTimeout(playNext, 0);
+                return;
+            }
+            
+            const char = morse[currentIndex];
+            currentIndex++;
+            
+            if (char === '.') {
+		if (currentIndex === 1) {
+			glowWordGap();
+		} else {
+                glowOnFast();
+		}
+                timeoutId = setTimeout(() => {
+                    if (isPlaying) {
+                        glowOff();
+                        timeoutId = setTimeout(playNext, SYMBOL_GAP);
+                    }
+                }, DOT_DURATION);
+            } else if (char === '-') {
+                if (currentIndex === 1) {
+			glowWordGap();
+		} else {
+                glowOnFast();
+		}
+                timeoutId = setTimeout(() => {
+                    if (isPlaying) {
+                        glowOff();
+                        timeoutId = setTimeout(playNext, SYMBOL_GAP);
+                    }
+                }, DASH_DURATION);
+                
+            } else if (char === ' ') {
+                let gapDuration = LETTER_GAP;
+                let isWordGap = false;
+                
+                if (currentIndex < morse.length && morse[currentIndex] === ' ') {
+                    gapDuration = WORD_GAP;
+                    isWordGap = true;
+                    currentIndex++;
+                }
+                
+                if (isWordGap) {
+                    // ✨ Word gap - color change!
+                    glowWordGap();
+                } else {
+                    // Regular letter gap - dim
+                    glowOff();
+                }
+                
+                timeoutId = setTimeout(playNext, gapDuration);
+            }
+        }
+        
+        playNext();
+    }
+    
+    // Start with off state
+    glowOff();
+    setTimeout(playSequence, 100);
+    
+    // Return a stop function
+    return function stop() {
+        isPlaying = false;
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+        }
+        glow.classList.remove('on', 'on-fast', 'off', 'word-gap', 'word-gap-purple', 'word-gap-amber');
+        glow.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        glow.style.opacity = '0.15';
+        glow.style.transform = 'translate(-50%, -50%) scale(0.85)';
+    };
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    const stopMorse = startMorseGlow();
+    
+    // Toggle button
+    const toggleBtn = document.createElement('button');
+    toggleBtn.textContent = '⏹️ Stop Morse';
+    toggleBtn.style.cssText = `
+        position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+        padding: 8px 16px; background: #333; color: white;
+        border: none; border-radius: 5px; cursor: pointer;
+        font-size: 0.8em; font-family: sans-serif;
+        opacity: 0.5;
+        transition: opacity 0.3s ease;
+    `;
+    toggleBtn.addEventListener('mouseenter', () => toggleBtn.style.opacity = '1');
+    toggleBtn.addEventListener('mouseleave', () => toggleBtn.style.opacity = '0.5');
+    
+    let stopped = false;
+    let currentStop = stopMorse;
+    
+    toggleBtn.addEventListener('click', function() {
+        if (!stopped) {
+            currentStop();
+            this.textContent = '▶️ Play Morse';
+            stopped = true;
+        } else {
+            currentStop = startMorseGlow();
+            this.textContent = '⏹️ Stop Morse';
+            stopped = false;
+        }
+    });
+    document.body.appendChild(toggleBtn);
+});
+</script>

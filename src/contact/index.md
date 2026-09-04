@@ -8,5 +8,7 @@ The fastest way to get ahold of me is to DM me on [Instagram](https://www.instag
 Email me at: [bin11101001@gmail.com](mailto:bin11101001@gmail.com)
 ## Social Media
 - [Instagram](https://www.instagram.com/e9artist)
-- [Bandcamp](https://e9music1.bandcamp.com/)
-- [YouTube](https://www.youtube.com/@e9artist)
+- [Other Instagram](https://www.instagram.com/e9band) <small>rarely used...</small>
+- [Bandcamp](https://e9music1.bandcamp.com/) <small>rarely used...</small>
+- [YouTube](https://www.youtube.com/@e9artist) <small>rarely used...</small>
+- [SoundCloud](https://on.soundcloud.com/OTRpkl1bJ3pt5vnRWM) <small>rarely used...</small>
