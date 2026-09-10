@@ -9,21 +9,8 @@ layout: "base.njk"
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;As stated elsewhere, this website is still very much under construction. I plan to add a lot more to each page, especially the <b>[Blog](/blog/)</b>, <b>[Music](/music/)</b>, <b>[Downloads](/downloads/)</b>, and <b>[Tools](/tools/)</b> pages. There's also currently a lot of redundancy on this site; eventually, the pages will narrow in scope<a href="#fn4" class="footnote-ref" id="ref4" title="Jump to footnote">1</a>. I tend to apologize for my longwindedness but since this is my site, I'll merely mention it as being one of my quirks <small>(hence, the footnotes)</small>. I can definitely see myself spending a lot of time writing on here, especially about my various electronics projects, so if you're interested in my work or art and enjoy lengthy reads and technical details about electronics and music <a href="https://en.wikipedia.org/wiki/Do_it_yourself" title="Do it yourself - Wikipedia" target="_blank">DIY</a> projects, you'll definitely wanna bookmark this site!
 
-<!--
-## My [Music](/music/)
-
-
-
-## My Electronics Projects
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;I love programming and building electronics stuff, especially with <a href="https://en.wikipedia.org/wiki/Microcontroller" title="Microcontroller - Wikipedia" target="_blank">microcontrollers</a>. I have many old projects I intend to write <b>[blog posts](/blog)</b> for and will be of course writing up new projects as they come along. I've built a lot of metronomes and MIDI controllers over the years! I even programmed my own <a href="https://en.wikipedia.org/wiki/Android_(operating_system)" title="Android (operating system) - Wikipedia" target="_blank">Android</a> metronome app (no it's never been in the Play Store). My website is still quite new so check back or subscribe to <b>[my 📡 RSS feed](/feed.xml)</b> to stay updated!
-
-## Guitar Lessons
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;I'm currently accepting students! <b>[Contact me](/contact)</b> to schedule a trial lesson. -->
-
 <div class="footnote">
-<p id="fn1"><sup>19 years</sup> I've only been playing out for 3 years as of Sep 2026 and used to joke I was a "closet musician" before that. There was also a period of 3 years where my R thumb was so injured I could play guitar. I mention all of this for clarity's sake. <a href="#ref1" class="footnote-return" title="Jump back to text">↩</a></p>
+<p id="fn1"><sup>19 years</sup> I've only been playing out for 3 years as of Sep 2026 and used to joke I was a "closet musician" before that. There was also a period of 3 years where my R thumb was so injured I couldn't play guitar. I mention all of this for clarity's sake. <a href="#ref1" class="footnote-return" title="Jump back to text">↩</a></p>
 <p id="fn3"><sup>automated live looping</sup> I've programmed several <a href="https://www.reaper.fm/sdk/js/js.php" title="JSFX Website" target="_blank">JSFX</a> plugins for <a href="https://www.reaper.fm/" title="REAPER Website" target="_blank">REAPER</a> that will eventually be available on my <a href="/downloads/"><b>Downloads</b></a> page including the plugin that does my automated live looping. At its heart, it's just a glorified delay plugin with recording/playback control via MIDI notes. <a href="#ref3" class="footnote-return" title="Jump back to text">↩</a></p>
 <p id="fn2"><sup>progtronica</sup> This should be obvious but progtronica is a portmanteau of progressive metal/rock (or prog) and electronica. <a href="#ref2" class="footnote-return" title="Jump back to text">↩</a></p>
 <p id="fn4"><sup>1</sup> I legitimately started thinking about talking about the other pages on here before typing this sentence and realizing I already mentioned them elsewhere on this site. I imagine eventually this About Me page will focus on who I am personally so I have to think about what all to type up for now. <a href="#ref4" class="footnote-return" title="Jump back to text">↩</a></p>

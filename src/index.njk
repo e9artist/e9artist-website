@@ -11,7 +11,7 @@ layout: "base.njk"
             <div class="glow-sphere" id="morseGlow"></div>
     	    <!-- Inner Glow (directly behind logo) -->
     	    <div class="inner-glow" id="innerGlow"></div>
-            <img src="/images/E9 Logo No Background.png" alt="{{ site.title }}" class="hero-logo">
+            <img src="/images/E9 Logo No Background.svg" alt="{{ site.title }}" class="hero-logo">
 	</div>
         <!-- <h1>{{ site.title }}</h1> -->
         <p class="tagline">{{ site.tagline }}</p>
@@ -108,9 +108,10 @@ layout: "base.njk"
 /* The glow element - forced rectangle with box-shadow */
 .glow-sphere {
     position: absolute;
+	visibility: hidden;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(0.74);
     width: 298px !important; /*272*/
     height: 186px !important;/*193*/
     border-radius: 0 !important;
@@ -126,6 +127,9 @@ layout: "base.njk"
         0 0 60px 30px rgba(255, 255, 255, 0.4),
         0 0 90px 50px rgba(255, 255, 255, 0.15) !important;
     background: transparent !important;
+}
+.glow-sphere.ready {
+    visibility: visible;
 }
 
 /* Glow ON - bright */
@@ -242,12 +246,7 @@ layout: "base.njk"
     pointer-events: none;
     z-index: 0.8;
     opacity: 1;
-    background: radial-gradient(
-        ellipse at center,
-        rgba(255, 255, 255, 0.9) 0%,
-        rgba(255, 255, 255, 0.9) 60%,
-        rgba(255, 255, 255, 0.2) 100%
-    );
+    background: rgba(255, 255, 255, 1);
     transition: background 2.7s ease-in-out, opacity 2.7s ease-in-out !important;
 }
 
@@ -307,75 +306,50 @@ function startMorseGlow() {
         console.warn('Glow element not found!');
         return;
     }
-    
+
     const message = "E9";
     const morse = textToMorse(message);
-    
+
     let isPlaying = true;
     let timeoutId = null;
-    
+
     // ⏱️ Timing values
     const DOT_DURATION = 2500;
     const DASH_DURATION = 7500;
     const SYMBOL_GAP = 2500;
-    const SYMBOL_GAP_LONG = 3;
     const LETTER_GAP = 0;
     const WORD_GAP = 3000;
-    
-    // ✅ Clear all classes and set base state
+
     function setGlowState(state) {
-        // Remove all state classes
         glow.classList.remove('on', 'on-fast', 'off', 'word-gap', 'word-gap-purple', 'word-gap-amber');
-        // Add the new state
         if (state) {
             glow.classList.add(state);
         }
     }
-    
-    // ✅ Glow ON
-    function glowOn() {
-        setGlowState('on');
-    }
-    // ✅ Glow ON
-    function glowOnFast() {
-        setGlowState('on-fast');
-    }
-    
-    // ✅ Glow OFF (dim)
-    function glowOff() {
-        setGlowState('off');
-    }
-    
-    // ✅ Word gap - change color
-    function glowWordGap() {
-        // Choose your word gap color here!
-        setGlowState('word-gap');  // or 'word-gap-purple' or 'word-gap-amber'
-    }
-    
-    // Main sequence player
+
+    function glowOn()       { setGlowState('on'); }
+    function glowOnFast()   { setGlowState('on-fast'); }
+    function glowOff()      { setGlowState('off'); }
+    function glowWordGap()  { setGlowState('word-gap'); }  // or 'word-gap-purple' / 'word-gap-amber'
+
     function playSequence() {
         if (!isPlaying) return;
-        
         let currentIndex = 0;
-        
+
         function playNext() {
             if (!isPlaying) return;
-            
+
             if (currentIndex >= morse.length) {
                 currentIndex = 0;
                 timeoutId = setTimeout(playNext, 0);
                 return;
             }
-            
+
             const char = morse[currentIndex];
             currentIndex++;
-            
+
             if (char === '.') {
-		if (currentIndex === 1) {
-			glowWordGap();
-		} else {
-                glowOnFast();
-		}
+                if (currentIndex === 1) { glowWordGap(); } else { glowOnFast(); }
                 timeoutId = setTimeout(() => {
                     if (isPlaying) {
                         glowOff();
@@ -383,48 +357,39 @@ function startMorseGlow() {
                     }
                 }, DOT_DURATION);
             } else if (char === '-') {
-                if (currentIndex === 1) {
-			glowWordGap();
-		} else {
-                glowOnFast();
-		}
+                if (currentIndex === 1) { glowWordGap(); } else { glowOnFast(); }
                 timeoutId = setTimeout(() => {
                     if (isPlaying) {
                         glowOff();
                         timeoutId = setTimeout(playNext, SYMBOL_GAP);
                     }
                 }, DASH_DURATION);
-                
             } else if (char === ' ') {
                 let gapDuration = LETTER_GAP;
                 let isWordGap = false;
-                
+
                 if (currentIndex < morse.length && morse[currentIndex] === ' ') {
                     gapDuration = WORD_GAP;
                     isWordGap = true;
                     currentIndex++;
                 }
-                
+
                 if (isWordGap) {
-                    // ✨ Word gap - color change!
                     glowWordGap();
                 } else {
-                    // Regular letter gap - dim
                     glowOff();
                 }
-                
+
                 timeoutId = setTimeout(playNext, gapDuration);
             }
         }
-        
+
         playNext();
     }
-    
-    // Start with off state
+
     glowOff();
     setTimeout(playSequence, 100);
-    
-    // Return a stop function
+
     return function stop() {
         isPlaying = false;
         if (timeoutId) {
@@ -440,8 +405,15 @@ function startMorseGlow() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
+    // ✅ Set initial state and reveal BEFORE starting the Morse animation
+    const glow = document.getElementById('morseGlow');
+    if (glow) {
+        glow.classList.add('off');
+        glow.classList.add('ready');
+    }
+
     const stopMorse = startMorseGlow();
-    
+
     // Toggle button
     const toggleBtn = document.createElement('button');
     toggleBtn.textContent = '⏹️ Stop Morse';
@@ -455,10 +427,10 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     toggleBtn.addEventListener('mouseenter', () => toggleBtn.style.opacity = '1');
     toggleBtn.addEventListener('mouseleave', () => toggleBtn.style.opacity = '0.5');
-    
+
     let stopped = false;
     let currentStop = stopMorse;
-    
+
     toggleBtn.addEventListener('click', function() {
         if (!stopped) {
             currentStop();

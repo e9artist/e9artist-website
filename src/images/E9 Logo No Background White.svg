@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   version="1.1"
+   id="svg1"
+   width="301.76001"
+   height="213.12"
+   viewBox="0 0 301.76001 213.12"
+   sodipodi:docname="E9 Logo No Background.png"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <filter
+       style="color-interpolation-filters:sRGB"
+       inkscape:label="Invert"
+       id="filter1"
+       x="0"
+       y="0"
+       width="1"
+       height="1">
+      <feColorMatrix
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 -0.21 -0.72 -0.07 2 0 "
+         result="color2"
+         id="feColorMatrix1" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1">
+    <inkscape:page
+       x="0"
+       y="0"
+       width="301.76001"
+       height="213.12"
+       id="page2"
+       margin="0"
+       bleed="0" />
+  </sodipodi:namedview>
+  <g
+     inkscape:groupmode="layer"
+     inkscape:label="Image"
+     id="g1">
+    <path
+       style="fill:#000000;filter:url(#filter1)"
+       d="M 0,106.56 V 0 H 150.88 301.76001 V 106.56 213.12 H 150.88 0 Z M 264.96001,148 V 120 H 151.04 37.120001 v 28 28 H 151.04 264.96001 Z M 147.18091,69.679998 c 2.50409,-6.907999 6.19679,-17.075943 8.206,-22.59543 2.0092,-5.519488 3.6531,-10.163487 3.6531,-10.32 0,-0.165096 -25.59339,-0.284569 -60.960007,-0.284569 H 37.120001 v 22.88 22.879999 h 52.754006 52.754003 z m 117.70123,-10.239999 -0.0821,-22.8 -32.40617,-0.08152 -32.40617,-0.08152 -0.3034,0.721524 c -0.16687,0.396838 -1.25495,3.385524 -2.41795,6.641524 -1.163,3.256 -2.67179,7.432 -3.35287,9.28 -1.68629,4.575467 -9.21029,25.357007 -9.9347,27.439999 l -0.58427,1.68 h 40.78489 40.7849 z"
+       id="path1" />
+  </g>
+</svg>

@@ -31,15 +31,17 @@ layout: "base.njk"
                 <span id="total-time">0:00</span>
             </div>
         </div>
-        
-        <!-- Controls -->
-        <div class="controls">
-            <button onclick="toggleShuffle()" id="shuffle-btn" title="Shuffle (S)">🔀</button>
-            <button onclick="playPrev()" title="Previous (←)">⏮</button>
-            <button onclick="togglePlay()" id="play-btn" title="Play/Pause (Space)">⏸</button>
-            <button onclick="playNext()" title="Next (→)">⏭</button>
-            <button onclick="toggleRepeat()" id="repeat-btn" title="Repeat (R)">🔁</button>
-        </div>
+		<div>
+		<!-- Controls -->
+		<div class="controls">
+						<button onclick="toggleAutoplay()" id="autoplay-btn" title="Autoplay on load (A)">🔇</button>
+			<button onclick="toggleShuffle()" id="shuffle-btn" title="Shuffle (S)">🔀</button>
+			<button onclick="playPrev()" title="Previous (←)">⏮</button>
+			<button onclick="togglePlay()" id="play-btn" title="Play/Pause (Space)">⏸</button>
+			<button onclick="playNext()" title="Next (→)">⏭</button>
+			<button onclick="toggleRepeat()" id="repeat-btn" title="Repeat (R)">🔁</button>
+		</div>
+		</div>
         
         <!-- Volume Control -->
         <div class="volume-control">
@@ -695,6 +697,7 @@ margin-bottom: 2px;
 
 /* Controls */
 .controls {
+	position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -850,6 +853,28 @@ section.music-player {
 #playlist li:hover:not(.active) {
     background-color: var(--playlist-hover);
     border-radius: 4px;
+}
+/* Autoplay toggle button - smaller than other controls */
+#autoplay-btn {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    /* Smaller size */
+    font-size: 0.7em;
+    padding: 4px 8px;
+    min-width: 28px;
+    /* Resting look */
+    opacity: 0.5;
+}
+
+#autoplay-btn.active {
+    color: var(--link-color);
+    opacity: 1;
+}
+
+#autoplay-btn:hover {
+    opacity: 1;
 }
 </style>
 
@@ -1013,7 +1038,13 @@ let isShuffled = false;
 let repeatMode = 'none';
 let shuffledOrder = [];
 let currentShuffledIndex = 0;
-
+let intendedPlaying = false;
+let isInitializing = true;
+// ============================================================
+// AUTOPLAY STATE
+// ============================================================
+let autoplayEnabled = false;
+const AUTOPLAY_KEY = 'autoplayEnabled';
 // ============================================================
 // DOM ELEMENTS
 // ============================================================
@@ -1870,11 +1901,16 @@ function resetPlaylist() {
 // ============================================================
 // PLAYER FUNCTIONS
 // ============================================================
-function loadTrack(index) {
+function loadTrack(index, autoplay = true) {
     if (currentPlaylist.length === 0) {
         audio.pause();
         nowPlaying.textContent = 'No songs in playlist';
         playBtn.textContent = '▶';
+		renderPlaylist();
+		renderLibrary();
+		if (!isInitializing) {
+			setTimeout(savePlayerState, 100);
+		}
         return;
     }
     
@@ -1895,18 +1931,24 @@ function loadTrack(index) {
     
     audio.src = track.file;
     nowPlaying.textContent = track.title;
-    playBtn.textContent = '⏸';
-    // ✅ Try to play, but catch any errors silently
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-        playPromise.catch(() => {
-            // Silent catch - the user can click play manually
-            playBtn.textContent = '▶';
-        });
+    
+    if (autoplay) {
+        playBtn.textContent = '⏸';
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                playBtn.textContent = '▶';
+            });
+        }
+    } else {
+        playBtn.textContent = '▶';
     }
+    
     renderPlaylist();
     renderLibrary();
-    setTimeout(savePlayerState, 100);
+    if (!isInitializing) {
+        setTimeout(savePlayerState, 100);
+    }
 }
 
 function togglePlay() {
@@ -1990,6 +2032,30 @@ function toggleRepeat() {
     }
     savePlayerState();
 }
+	
+// ============================================================
+// AUTOPLAY TOGGLE
+// ============================================================
+function toggleAutoplay() {
+    autoplayEnabled = !autoplayEnabled;
+    updateAutoplayButton();
+    localStorage.setItem(AUTOPLAY_KEY, autoplayEnabled ? 'true' : 'false');
+    showToast(autoplayEnabled ? 'Autoplay on load: ON ▶' : 'Autoplay on load: OFF ⏸', 'info', 2000);
+}
+
+function updateAutoplayButton() {
+    const btn = document.getElementById('autoplay-btn');
+    if (!btn) return;
+    if (autoplayEnabled) {
+        btn.classList.add('active');
+        btn.textContent = 'AUTO ▶';
+        btn.title = 'Autoplay on load: ON';
+    } else {
+        btn.classList.remove('active');
+        btn.textContent = 'AUTO ⏸';
+        btn.title = 'Autoplay on load: OFF';
+    }
+}
 
 function handleSongEnd() {
     if (currentPlaylist.length === 0) return;
@@ -2045,12 +2111,13 @@ function savePlayerState() {
     try {
         const state = {
             volume: audio.volume,
-            isPlaying: !audio.paused,
+            isPlaying: intendedPlaying,
             currentTime: audio.currentTime,
             lastTrack: currentTrackIndex,
             repeatMode: repeatMode,
             isShuffled: isShuffled
         };
+        console.log('[savePlayerState] writing isPlaying=', intendedPlaying, 'isInitializing=', isInitializing);
         localStorage.setItem('playerState', JSON.stringify(state));
     } catch (e) {
         console.warn('Failed to save player state:', e);
@@ -2105,14 +2172,23 @@ function restorePlayerState() {
 }
 
 // Save state on page unload
-window.addEventListener('beforeunload', function() {
+/*window.addEventListener('beforeunload', function() {
     savePlayerState();
+});*/
+// Save state reliably when leaving the page
+window.addEventListener('pagehide', savePlayerState);
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+        savePlayerState();
+    }
 });
 
 // Save state periodically when playing
 let stateSaveInterval = null;
 audio.addEventListener('play', function() {
     playBtn.textContent = '⏸';
+	intendedPlaying = true;
+	if (isInitializing) return;
     savePlayerState();
     // Start periodic saving while playing
     if (stateSaveInterval) clearInterval(stateSaveInterval);
@@ -2121,7 +2197,10 @@ audio.addEventListener('play', function() {
 
 audio.addEventListener('pause', function() {
     playBtn.textContent = '▶';
-    savePlayerState();
+    if (!isInitializing) {
+        intendedPlaying = false;
+        savePlayerState();
+    }
     // Stop periodic saving when paused
     if (stateSaveInterval) {
         clearInterval(stateSaveInterval);
@@ -2166,12 +2245,12 @@ function formatTime(seconds) {
 }
 
 audio.addEventListener('ended', handleSongEnd);
-audio.addEventListener('play', function() {
+/*audio.addEventListener('play', function() {
     playBtn.textContent = '⏸';
 });
 audio.addEventListener('pause', function() {
     playBtn.textContent = '▶';
-});
+});*/
 
 document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -2188,6 +2267,10 @@ document.addEventListener('keydown', function(e) {
         case 'ArrowLeft':
             e.preventDefault();
             playPrev();
+            break;
+		case 'a':
+        case 'A':
+            toggleAutoplay();
             break;
         case 's':
         case 'S':
@@ -2247,6 +2330,9 @@ toggleHeaderBtn.addEventListener('click', function() {
 // ============================================================
 function init() {
     currentPlaylist = getPlaylist();
+    // ✅ Load autoplay preference
+    autoplayEnabled = localStorage.getItem(AUTOPLAY_KEY) === 'true';
+    updateAutoplayButton();
     
     renderPlaylist();
     renderLibrary();
@@ -2331,27 +2417,43 @@ function init() {
         
         if (savedTrack !== null && parseInt(savedTrack) < currentPlaylist.length) {
             currentTrackIndex = parseInt(savedTrack);
-            loadTrack(currentTrackIndex);
+            loadTrack(currentTrackIndex, false);
             if (savedTime) {
                 audio.currentTime = parseFloat(savedTime);
             }
         } else {
-            loadTrack(0);
+            loadTrack(0, false);
         }
         
-        // ✅ Restore play state after track is loaded
+        // ✅ Restore play state after track is loaded (only if autoplay is enabled)
         if (savedState) {
             try {
                 const state = JSON.parse(savedState);
-                if (state.isPlaying) {
-                    audio.play().catch(() => {
-                        // Autoplay blocked - user will need to click play
+                console.log('[Autoplay] autoplayEnabled:', autoplayEnabled);
+                console.log('[Autoplay] state.isPlaying:', state.isPlaying);
+                console.log('[Autoplay] audio.src:', audio.src);
+                console.log('[Autoplay] audio.readyState:', audio.readyState);
+                
+                if (autoplayEnabled) {
+                    // Autoplay toggle is ON → always play on load, regardless of prior state
+                    console.log('[Autoplay] Attempting to play...');
+                    audio.play().then(() => {
+                        console.log('[Autoplay] ✅ play() succeeded');
+                    }).catch((err) => {
+                        console.warn('[Autoplay] ❌ play() blocked:', err.name, err.message);
                         playBtn.textContent = '▶';
                     });
                 } else {
+                    // Autoplay toggle is OFF → honor the last saved play/pause state
+                    if (state.isPlaying) {
+                        // It was playing when they left, but autoplay is off,
+                        // so leave it paused. (Alternatively: this branch is
+                        // unreachable in practice if the toggle was just turned off.)
+                    }
                     audio.pause();
                     playBtn.textContent = '▶';
                 }
+                
                 // Restore current time if not already set
                 if (state.currentTime && !savedTime) {
                     audio.currentTime = state.currentTime;
@@ -2366,24 +2468,12 @@ function init() {
             toggleShuffle();
         }
         
-        const savedRepeat = localStorage.getItem('repeatMode');
-        if (savedRepeat && ['none', 'all', 'one'].includes(savedRepeat)) {
-            repeatMode = savedRepeat;
-            switch(repeatMode) {
-                case 'all':
-                    repeatBtn.textContent = '🔁';
-                    repeatBtn.style.color = '#00ffaa';
-                    break;
-                case 'one':
-                    repeatBtn.textContent = '🔂';
-                    repeatBtn.style.color = '#00ffaa';
-                    break;
-            }
-        }
+        
     }
-
+	// ✅ Initialization complete - allow pause/play events to update state
+    isInitializing = false;
     // ✅ Save state on page unload
-    window.addEventListener('beforeunload', function() {
+    /*window.addEventListener('beforeunload', function() {
         // Save all player state
         try {
             const state = {
@@ -2398,8 +2488,7 @@ function init() {
         } catch (e) {
             console.warn('Failed to save player state:', e);
         }
-    });
+    });*/
 }
-
 init();
 </script>
