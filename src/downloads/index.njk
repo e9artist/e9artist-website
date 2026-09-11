@@ -534,7 +534,7 @@ text-align: center;
     }
 }
 .download-section {
-    margin: 30px 0;
+    margin: 10px 0;
     padding: 10px;
     padding-top: 5px;
     border: 1px solid var(--border-color);
@@ -652,23 +652,37 @@ text-align: center;
 
 .support-section {
     background: var(--card-bg);
-    padding: 10px;
+    padding: 12px 15px;
     border-radius: 10px;
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 15px;      /* was 30px */
     border: 2px dashed var(--link-color);
     font-size: 0.9em;
+}
+
+.support-section h2 {
+    margin: 0 0 6px 0;        /* tighter heading */
+    font-size: 1.15em;
+}
+
+.support-section p {
+    margin: 6px 0;            /* tighter paragraphs */
+    line-height: 1.4;
+}
+
+.support-section p small {
+    font-size: 0.85em;        /* the "Or use my Venmo handle" line */
 }
 
 .support-button {
     display: inline-block;
     background: var(--link-color);
     color: white;
-    padding: 15px 40px;
+    padding: 10px 28px;       /* was 15px 40px */
     border-radius: 30px;
     text-decoration: none;
-    font-size: 1.2em;
-    margin: 5px 0;
+    font-size: 1.05em;        /* was 1.2em */
+    margin: 6px 0;
     transition: all 0.3s ease;
 }
 
@@ -697,54 +711,157 @@ code {
     background: var(--input-bg);
 }
 
-/* Mobile responsiveness */
 @media (max-width: 700px) {
-    .download-list,
-    .download-item,
-    .download-item > div {
+    /* ---- BUTTONS: smaller ---- */
+    .section-header-link {
+        padding: 4px 10px;
+        font-size: 0.85em;
+    }
+    .section-header-link h3 {
+        font-size: 1em;
+    }
+    .download-all-mp3-btn {
+        padding: 4px 10px;
+        font-size: 0.7em;
+    }
+    .download-all-catalogue-btn {
+        padding: 4px 10px;
+        font-size: 0.7em;
+        max-width: 70px;
+    }
+    .support-button {
+        padding: 10px 24px;
+        font-size: 1em;
+    }
+    
+    /* ---- SECTION HEADERS: stack so nothing overflows ---- */
+    .download-section-header,
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    
+    .download-section-header .button-group {
+        flex-wrap: wrap;
+        max-height: none;
+        width: 100%;
+        gap: 6px;
+    }
+    
+    /* The "Files hosted on Dropbox..." paragraph */
+    .download-section-header .button-group > p {
+        flex: 1 1 100%;
+        width: 100%;
+        margin: 4px 0 0 0;
+        font-size: 0.7em;
+        line-height: 1.3;
+    }
+    
+    .section-header h3 {
+        font-size: 0.95em;
+    }
+    
+    .section-header small,
+    .section-header t small,
+    .section-header > t {
+        font-size: 0.65em;
+        line-height: 1.2;
+    }
+    
+    /* ---- DOWNLOAD ITEMS: metadata inline on one row ---- */
+    .download-list {
         display: block;
     }
     
     .download-item {
+        display: block;
+        padding: 6px 0;
         border-bottom: 1px solid var(--border-color);
-        padding: 8px 0;
     }
     
     .download-item:last-child {
         border-bottom: none;
     }
     
-    .download-item > div {
-        padding: 3px 8px;
+    /* IMPORTANT: don't blanket-display:block all direct children */
+    .download-item .download-link {
+        display: block;
+        padding: 0 4px 2px 4px;
+        font-size: 0.9em;
+        line-height: 1.3;
     }
     
-    .download-duration,
-    .download-size {
-        text-align: left;
-        white-space: normal;
+    .download-item .download-link a {
+        font-size: 0.9em;
+    }
+    
+    .download-item .download-link small,
+    .download-item .download-link t {
+        font-size: 0.8em;
+        margin: 0 3px;
+    }
+    
+    /* Metadata: inline, high specificity to beat any prior block rules */
+    .download-item .download-duration,
+    .download-item .download-size,
+    .download-item .download-tip {
+        display: inline;
         width: auto;
-        padding-left: 8px;
-        font-size: 0.85em;
-        display: inline-block;
-    }
-    
-    .download-size {
-        padding-left: 5px;
-    }
-    
-    .download-tip {
+        padding: 0;
+        margin: 0;
+        font-size: 0.75em;
+        white-space: nowrap;
         text-align: left;
-        white-space: normal;
-        width: auto;
-        padding-left: 8px;
+        vertical-align: baseline;
+    }
+    
+    /* Separators between metadata items */
+    .download-item .download-duration::after,
+    .download-item .download-size::after {
+        content: " · ";
+        color: var(--secondary-text);
+        opacity: 0.6;
+        margin: 0 2px;
+    }
+    
+    .download-item .download-tip .tip-link {
+        font-size: 0.75em;
     }
     
     .download-item:hover {
         background-color: transparent;
     }
     
-    .section-header h3 {
+    /* ---- MISC ---- */
+    .download-section {
+        padding: 8px;
+    }
+     .support-section {
+        padding: 10px 12px;
+        margin-bottom: 12px;
+        border-width: 1px;        /* thinner dashed border on small screens */
+    }
+    
+    .support-section h2 {
         font-size: 1em;
+        margin-bottom: 4px;
+    }
+    
+    .support-section p {
+        font-size: 0.85em;
+        line-height: 1.35;
+        margin: 4px 0;
+    }
+    
+    .support-section p small {
+        font-size: 0.8em;
+    }
+    
+    .support-button {
+        padding: 8px 20px;
+        font-size: 0.95em;
+        margin: 4px 0;
     }
 }
 </style>

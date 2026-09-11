@@ -209,6 +209,7 @@ margin-top: 0px;
     }
     
     .load-all-btn {
+		margin-left: 0;
         font-size: 0.65em;
         padding: 3px 12px;
     }
@@ -478,6 +479,30 @@ margin-bottom: 2px;
 
 .library-header .load-section-btn:active {
     transform: scale(0.95);
+}
+	@media (max-width: 600px) {
+    .library-title-container {
+        width: 100%;
+        min-width: 0;   /* override the 200px min-width */
+    }
+    
+    .library-search-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .library-search {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .library-hint {
+        flex: none;
+        width: 100%;
+        text-align: left;
+        margin-top: 4px;
+    }
 }
 
 /* Shared playlist styles */
@@ -875,6 +900,36 @@ section.music-player {
 
 #autoplay-btn:hover {
     opacity: 1;
+}
+	@media (max-width: 600px) {
+    #autoplay-btn {
+        position: static;
+        transform: none;
+        margin-right: auto;
+        font-size: 0.75em;
+        padding: 6px 8px;
+        min-width: 30px;
+    }
+    
+    #autoplay-btn:hover {
+        transform: none;   /* cancel the translateY override from desktop */
+    }
+}
+	@media (max-width: 600px) {
+    .controls {
+        gap: 8px;
+    }
+    
+    .controls button {
+        padding: 8px 10px;
+        min-width: 40px;
+        font-size: 1em;
+    }
+    
+    #play-btn {
+        font-size: 1.3em;
+        padding: 8px 14px;
+    }
 }
 </style>
 

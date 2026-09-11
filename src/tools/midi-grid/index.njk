@@ -3,18 +3,14 @@ title: "MIDI Note Grid Pro"
 layout: "base.njk"
 ---
 
-<!-- Add a back link to the Tools page -->
 <p><a href="/tools/" class="back-link">← Back to Tools</a></p>
-
 <h1>MIDI Note Grid Pro</h1>
-
 <style>
 /* Your CSS here - keep all your styles */
 /* You can keep the :root and dark-mode variables, but they might conflict with your site theme */
 /* To avoid conflicts, wrap everything in a .midi-grid-container class */
-
 .midi-grid-container {
-    /* Your styles here */
+ /* Your styles here */
  :root {
             --bg-color: #f4f4f9;
             --text-color: #333;
@@ -83,9 +79,9 @@ layout: "base.njk"
         }
         .controls {
             width: 100%;
-            max-width: 1400px;
-            margin-bottom: 10px;
-            padding: 8px 10px;
+            max-width: 1100px;
+            margin-bottom: 4px;
+            padding: 8px 1px;
             background: var(--control-bg);
             border-radius: 5px;
             box-shadow: var(--shadow);
@@ -189,7 +185,8 @@ layout: "base.njk"
             flex-direction: column;
             gap: 8px;
             width: 100%;
-            max-width: 1000px;
+            max-width: 1100px;
+            margin: 0 auto;
         }
         .octave-row {
             display: grid;
@@ -435,10 +432,11 @@ layout: "base.njk"
             flex-direction: column;
             gap: 10px;
             background: var(--control-bg);
-            padding: 10px;
+            padding: 0px;
             border-radius: 5px;
             box-shadow: var(--shadow);
-            margin-bottom: 15px;
+            margin-bottom: 5px;
+            margin-top: 0px;
             width: 100%;
             max-width: 900px;
             transition: all 0.3s ease;
@@ -1033,121 +1031,528 @@ layout: "base.njk"
 .midi-grid-container.dark-mode .note-card.active .note-interval {
     color: #ffffff;
 }
+.midi-grid-container .control-group-inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+	padding-left: 7px;
+	padding-right: 0px;
+}
+/* Search row - Note Search + Theory Search on same row */
+.midi-grid-container .search-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    width: 260px;
+    max-width: 100%;
+}
+.midi-grid-container .search-row #noteSearch {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+}
+	
+.midi-grid-container .search-row #theorySearch {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+	max-width: 120px;
+}
+/* Utility bar: standardize buttons + keep on one row */
+.midi-grid-container .utility-bar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
 
-/* All your existing CSS goes here... */
+/* Uniform icon-button size for the 3 utility buttons */
+.midi-grid-container .utility-bar .hide-panels-btn,
+.midi-grid-container .utility-bar .compact-btn,
+.midi-grid-container .utility-bar .help-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85em;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+
+/* Row-height control in the utility bar */
+.midi-grid-container .utility-bar .row-height-control {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.7em;
+}
+
+.midi-grid-container .utility-bar .row-height-control select {
+    width: auto;
+    min-width: 50px;
+    padding: 2px 3px;
+    font-size: 0.7em;
+}
+
+/* Waveform select in the utility bar */
+.midi-grid-container .utility-bar > .control-group {
+    flex: 0 0 auto;
+    width: auto;
+    align-items: center;
+}
+
+.midi-grid-container .utility-bar #waveformSelect {
+    width: auto;
+    min-width: 70px;
+    padding: 2px 3px;
+    font-size: 0.7em;
+}
+
+/* Stats chip — shrink but don't force full-width on desktop */
+.midi-grid-container .utility-bar .instrument-stats {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+/* ============================================================ */
+/* MOBILE LAYOUT FIXES FOR CONTROL PANEL                        */
+/* ============================================================ */
+@media (max-width: 700px) {
+    /* Outer container */
+    .midi-grid-container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    
+    /* Controls wrapper */
+    .midi-grid-container .controls {
+        padding: 6px 8px;
+        gap: 4px;
+        max-width: 100%;
+    }
+    
+    /* All control rows: stack vertically, full width */
+    .midi-grid-container .controls-row,
+    .midi-grid-container .controls-row-center,
+    .midi-grid-container .top-row-controls,
+    .midi-grid-container .bottom-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        width: 100%;
+    }
+    
+    /* Every control group gets full width */
+    .midi-grid-container .control-group {
+        width: 100%;
+        align-items: stretch;
+    }
+    
+    /* Inputs and selects fill their row */
+    .midi-grid-container input[type="text"],
+    .midi-grid-container select {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+    
+    /* Override the specific min-widths on individual inputs */
+    .midi-grid-container #noteSearch,
+    .midi-grid-container #theorySearch,
+    .midi-grid-container #instrumentSelect,
+    .midi-grid-container #rootSelect,
+    .midi-grid-container #scaleSelect,
+    .midi-grid-container #chordSelectVisible,
+    .midi-grid-container #waveformSelect,
+    .midi-grid-container #presetSelect,
+    .midi-grid-container #presetNameInput,
+    .midi-grid-container #guitarTuning,
+    .midi-grid-container #rowHeightSelect {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+    
+    /* Group boxes: full width by default */
+    .midi-grid-container .group-box {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 6px;
+    }
+    
+    /* The reset button that sits beside a select: full width now */
+    .midi-grid-container .reset-btn {
+        width: 100%;
+        height: 32px;
+        min-width: 0;
+        align-self: stretch;
+        font-size: 0.8em;
+    }
+	
+	.midi-grid-container .guitar-controls #guitarTuning {
+        flex: 0 0 auto;
+        width: auto;
+        min-width: 54px;
+        max-width: 60px;
+        padding: 2px 2px;
+        font-size: 0.7em;
+    }
+    
+    /* Notation radio group: make it a row that fills width */
+    .midi-grid-container .notation-group {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 20px;
+        padding: 4px 0;
+    }
+    
+    .midi-grid-container .notation-group label {
+        font-size: 1em;
+    }
+    
+    /* ============================================================ */
+    /* THEORY GROUP: own row on mobile, stacked contents            */
+    /* ============================================================ */
+    .midi-grid-container .theory-group {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 6px;
+    }
+    
+.midi-grid-container .theory-group .group-box-inner {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    width: 100%;
+}
+
+.midi-grid-container .theory-group #scaleSelect,
+.midi-grid-container .theory-group #chordSelectVisible {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    max-width: none;
+    box-sizing: border-box;
+    font-size: 0.75em;
+    padding: 4px 2px;
+}
+
+.midi-grid-container .theory-group .reset-btn {
+    flex: 0 0 auto;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    align-self: center;
+    font-size: 0.8em;
+    padding: 0;
+}
+    
+    /* ============================================================ */
+    /* PRESET ROW: Presets: label + dropdown share a row            */
+    /* ============================================================ */
+    .midi-grid-container .preset-controls {
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: row;
+        width: 100%;
+        gap: 4px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+    
+    /* "Presets:" label - shrink to content */
+    .midi-grid-container .preset-controls > label {
+        flex: 0 0 auto;
+        width: auto;
+        font-size: 0.7em;
+        white-space: nowrap;
+    }
+    
+    /* Preset dropdown - fill remaining space next to label */
+    .midi-grid-container .preset-controls > #presetSelect {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+    }
+    
+    /* Name input gets its own full-width row */
+    .midi-grid-container .preset-controls > #presetNameInput {
+        flex: 1 1 100%;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+    
+    /* Buttons stay compact and share rows */
+    .midi-grid-container .preset-btn {
+        flex: 0 0 auto;
+        min-width: 0;
+        padding: 6px 6px;
+        font-size: 0.65em;
+        white-space: nowrap;
+    }
+    
+    /* ============================================================ */
+    /* UTILITY BAR: buttons + H select + waveform on one row        */
+    /* ============================================================ */
+    .midi-grid-container .utility-bar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 6px;
+        width: 100%;
+    }
+    
+    /* Keep the 3 buttons the same compact size */
+    .midi-grid-container .utility-bar .hide-panels-btn,
+    .midi-grid-container .utility-bar .compact-btn,
+    .midi-grid-container .utility-bar .help-btn {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        font-size: 0.9em;
+    }
+    
+    /* Row-height control inline */
+    .midi-grid-container .utility-bar .row-height-control {
+        flex: 0 0 auto;
+        width: auto;
+        font-size: 0.75em;
+    }
+    
+    .midi-grid-container .utility-bar .row-height-control select {
+        width: auto;
+        min-width: 50px;
+    }
+    
+    /* Waveform select inline */
+    .midi-grid-container .utility-bar > .control-group {
+        flex: 0 0 auto;
+        width: auto;
+    }
+    
+    .midi-grid-container .utility-bar #waveformSelect {
+        width: auto;
+        min-width: 70px;
+        max-width: 90px;
+    }
+    
+    /* Stats chip: full-width row of its own */
+    .midi-grid-container .utility-bar .instrument-stats {
+        flex: 1 1 100%;
+        width: 100%;
+        box-sizing: border-box;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 4px 8px;
+        padding: 4px 8px;
+        font-size: 0.6em;
+    }
+    
+    /* ============================================================ */
+    /* HELP BUTTON (legacy, in case it stays elsewhere)             */
+    /* ============================================================ */
+    .midi-grid-container .help-btn {
+        align-self: flex-start;
+        min-width: 32px;
+        height: 32px;
+    }
+    
+    /* ============================================================ */
+    /* HELP CONTENT: full width, smaller text                       */
+    /* ============================================================ */
+    .midi-grid-container .help-container {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .midi-grid-container .help-content {
+        font-size: 0.7em;
+        padding: 8px;
+    }
+    
+    .midi-grid-container .help-item {
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+    
+    .midi-grid-container .help-command {
+        min-width: 70px;
+        font-size: 0.85em;
+    }
+    
+    /* ============================================================ */
+    /* UNIFIED CONTROL PANEL: narrower sliders, stacked sections    */
+    /* ============================================================ */
+    .midi-grid-container .unified-control-panel {
+        padding: 8px;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .midi-grid-container .control-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .midi-grid-container .control-section {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .midi-grid-container .slider-container-wrapper {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .midi-grid-container .slider-main-col {
+        min-width: 0;
+        width: 100%;
+    }
+    
+    .midi-grid-container .slider-actions-col {
+        width: 100%;
+    }
+    
+    .midi-grid-container .mode-grid {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    /* ============================================================ */
+    /* OCTAVE GRID                                 */
+    /* ============================================================ */
+    .midi-grid-container .octave-grid {
+        max-width: 100%;
+        width: 100%;
+        gap: 4px;
+    }
+    
+    .midi-grid-container .octave-row {
+        padding: 4px;
+        gap: 1px;
+    }
+    
+    .midi-grid-container .octave-row.compact {
+        padding: 2px 4px;
+    }
+    
+    /* ============================================================ */
+    /* SEARCH ROW: keep Note + Theory search inputs side by side    */
+    /* ============================================================ */
+.midi-grid-container .search-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+}
+
+.midi-grid-container .search-row #noteSearch {
+    flex: 0 0 40%;
+    width: 40%;
+    max-width: 40%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.midi-grid-container .search-row #theorySearch {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
+}
+    
+    /* ============================================================ */
+    /* KEY + NOTATION ROW: keep on the same row                     */
+    /* ============================================================ */
+    .midi-grid-container .control-group.control-group-inline {
+        flex-direction: row;
+        align-items: center;
+        width: auto;
+        gap: 8px;
+    }
+    
+    .midi-grid-container .control-group-inline #rootSelect {
+        width: auto;
+        min-width: 60px;
+        max-width: 100px;
+    }
+    
+    .midi-grid-container .control-group-inline .notation-group {
+        width: auto;
+        flex: 0 0 auto;
+    }
+    
+    /* ============================================================ */
+    /* INSTRUMENT ROW: select + guitar controls + reset inline      */
+    /* ============================================================ */
+    .midi-grid-container .group-box-inner {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    .midi-grid-container .group-box-inner #instrumentSelect {
+        flex: 1 1 140px;
+        min-width: 0;
+        width: auto;
+        max-width: 100%;
+    }
+    
+    .midi-grid-container .guitar-controls {
+        flex: 0 0 auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 4px;
+        width: auto;
+    }
+    
+    .midi-grid-container .guitar-controls select {
+        width: auto;
+        min-width: 60px;
+    }
+    
+    .midi-grid-container .guitar-controls label {
+        justify-content: flex-start;
+    }
+    
+    .midi-grid-container .group-box-inner .reset-btn {
+        flex: 0 0 auto;
+        width: auto;
+        min-width: 32px;
+        height: 32px;
+        align-self: center;
+    }
+}
 </style>
-
-<!-- Your HTML content here -->
-<!-- Remove <html>, <head>, <body> tags -->
-<!-- Keep everything between the <body> tags -->
-
 <div class="midi-grid-container">
         <div class="controls">
         <div class="controls-row">
             <div class="top-row-controls">
-                <!--<button class="dark-mode-btn" id="darkModeToggle" title="Toggle dark mode">☀️</button>-->
-                <button class="help-btn" id="helpToggleBtn" title="Toggle help menu">?</button>
-                <div class="control-group search-wrapper no-label">
-                    <span class="search-label">Note Search</span>
+                <div class="control-group control-group-inline search-row">
                     <input type="text" id="noteSearch" placeholder='e.g., "C", "Eb", "96", "C4", "C4-G6"'>
-                </div>
-                <div class="control-group search-wrapper no-label">
-                    <span class="search-label">Theory Search</span>
                     <input type="text" id="theorySearch" placeholder='e.g., "Major scale", "min7 chord", "guitar i"'>
                 </div>
-<div class="control-group no-label">
-    <select id="waveformSelect" style="min-width:80px;">
-        <option value="sine">Sine</option>
-        <option value="triangle">Triangle</option>
-        <option value="sawtooth">Sawtooth</option>
-        <option value="square">Square</option>
-    </select>
+                <div class="control-group control-group-inline">
+    <select id="rootSelect" style="min-width:60px;"></select>
+    <div class="notation-group">
+        <label><input type="radio" name="notation" value="sharp" checked> #</label>
+        <label><input type="radio" name="notation" value="flat"> b</label>
+    </div>
 </div>
-                <div class="control-group no-label">
-                    <div class="notation-group">
-                        <label><input type="radio" name="notation" value="sharp" checked> #</label>
-                        <label><input type="radio" name="notation" value="flat"> b</label>
-                    </div>
-                </div>
-                <div class="control-group no-label">
-                    <select id="rootSelect" style="min-width:60px;"></select>
-                </div>
-                <!-- Theory Group Box -->
-                <div class="group-box">
-                    <div class="group-box-inner">
-                        <select id="scaleSelect" style="min-width:100px;">
-                            <option value="">-- Scale --</option>
-                            <option value="ionian">Ionian (Major)</option>
-                            <option value="dorian">Dorian</option>
-                            <option value="phrygian">Phrygian</option>
-                            <option value="lydian">Lydian</option>
-                            <option value="mixolydian">Mixolydian</option>
-                            <option value="aeolian">Aeolian (Minor)</option>
-                            <option value="locrian">Locrian</option>
-                            <option value="harmonic_minor">Harmonic Minor</option>
-                            <option value="phrygian_dominant">Phrygian Dominant</option>
-                            <option value="melodic_minor">Melodic Minor</option>
-                            <option value="pentatonic_major">Pentatonic Major</option>
-                            <option value="pentatonic_minor">Pentatonic Minor</option>
-                            <option value="blues">Blues</option>
-                            <option value="whole_tone">Whole Tone</option>
-                            <option value="diminished">Diminished</option>
-                        </select>
-                        <select id="chordSelectVisible" style="min-width:100px;">
-                            <option value="">-- Chord --</option>
-                            <optgroup label="Triads">
-                                <option value="major">Major</option>
-                                <option value="minor">Minor</option>
-                                <option value="diminished">Diminished</option>
-                                <option value="augmented">Augmented</option>
-                                <option value="sus2">Sus2</option>
-                                <option value="sus4">Sus4</option>
-                            </optgroup>
-                            <optgroup label="7th Chords">
-                                <option value="major7">Major 7</option>
-                                <option value="minor7">Minor 7</option>
-                                <option value="dominant7">Dominant 7</option>
-                                <option value="half_diminished">Half-Dim</option>
-                                <option value="diminished7">Diminished 7</option>
-                                <option value="minor_major7">Minor-Major 7</option>
-                                <option value="dominant7flat5">Dominant 7♭5</option>
-                                <option value="dominant7sharp5">Dominant 7♯5</option>
-                                <option value="dominant7sus4">Dominant 7 Sus4</option>
-                                <option value="major7sharp5">Major 7♯5</option>
-                                <option value="minor7flat5">Minor 7♭5</option>
-                            </optgroup>
-                            <optgroup label="Extended">
-                                <option value="major9">Major 9</option>
-                                <option value="dominant9">Dominant 9</option>
-                                <option value="minor9">Minor 9</option>
-                                <option value="dominant13">Dominant 13</option>
-                                <option value="major7sharp11">Major 7♯11</option>
-                                <option value="dominant7flat9">Dominant 7♭9</option>
-                                <option value="dominant7sharp9">Dominant 7♯9</option>
-                                <option value="dominant7flat13">Dominant 7♭13</option>
-                                <option value="dominant9sharp11">Dominant 9♯11</option>
-                                <option value="dominant9flat13">Dominant 9♭13</option>
-                                <option value="minor11">Minor 11</option>
-                                <option value="major13">Major 13</option>
-                                <option value="dominant13sharp11">Dominant 13♯11</option>
-                                <option value="altered">Altered</option>
-                                <option value="lydian_dominant">Lydian Dom</option>
-                            </optgroup>
-                            <optgroup label="Others">
-                                <option value="power">Power Chord</option>
-                                <option value="major6">Major 6</option>
-                                <option value="minor6">Minor 6</option>
-                                <option value="major6_9">Major 6/9</option>
-                                <option value="minor6_9">Minor 6/9</option>
-                                <option value="sus4_9">Sus4/9</option>
-                                <option value="add9">Add9</option>
-                                <option value="minor_add9">Minor Add9</option>
-                                <option value="add11">Add11</option>
-                            </optgroup>
-                        </select>
-                        <button class="reset-btn" id="resetScaleChordBtn" title="Reset Scale & Chord">✕</button>
-                    </div>
-                </div>
                 <!-- Instrument Group Box -->
                 <div class="group-box">
                     <div class="group-box-inner">
@@ -1258,6 +1663,82 @@ layout: "base.njk"
             </div>
         </div>
         <div class="bottom-row">
+            <!-- Theory group (scale + chord + reset) -->
+            <div class="group-box theory-group">
+                <div class="group-box-inner">
+                    <select id="scaleSelect" style="min-width:100px;">
+                        <option value="">-- Scale --</option>
+                        <option value="ionian">Ionian (Major)</option>
+                        <option value="dorian">Dorian</option>
+                        <option value="phrygian">Phrygian</option>
+                        <option value="lydian">Lydian</option>
+                        <option value="mixolydian">Mixolydian</option>
+                        <option value="aeolian">Aeolian (Minor)</option>
+                        <option value="locrian">Locrian</option>
+                        <option value="harmonic_minor">Harmonic Minor</option>
+                        <option value="phrygian_dominant">Phrygian Dominant</option>
+                        <option value="melodic_minor">Melodic Minor</option>
+                        <option value="pentatonic_major">Pentatonic Major</option>
+                        <option value="pentatonic_minor">Pentatonic Minor</option>
+                        <option value="blues">Blues</option>
+                        <option value="whole_tone">Whole Tone</option>
+                        <option value="diminished">Diminished</option>
+                    </select>
+                    <select id="chordSelectVisible" style="min-width:100px;">
+                        <option value="">-- Chord --</option>
+                        <optgroup label="Triads">
+                            <option value="major">Major</option>
+                            <option value="minor">Minor</option>
+                            <option value="diminished">Diminished</option>
+                            <option value="augmented">Augmented</option>
+                            <option value="sus2">Sus2</option>
+                            <option value="sus4">Sus4</option>
+                        </optgroup>
+                        <optgroup label="7th Chords">
+                            <option value="major7">Major 7</option>
+                            <option value="minor7">Minor 7</option>
+                            <option value="dominant7">Dominant 7</option>
+                            <option value="half_diminished">Half-Dim</option>
+                            <option value="diminished7">Diminished 7</option>
+                            <option value="minor_major7">Minor-Major 7</option>
+                            <option value="dominant7flat5">Dominant 7♭5</option>
+                            <option value="dominant7sharp5">Dominant 7♯5</option>
+                            <option value="dominant7sus4">Dominant 7 Sus4</option>
+                            <option value="major7sharp5">Major 7♯5</option>
+                            <option value="minor7flat5">Minor 7♭5</option>
+                        </optgroup>
+                        <optgroup label="Extended">
+                            <option value="major9">Major 9</option>
+                            <option value="dominant9">Dominant 9</option>
+                            <option value="minor9">Minor 9</option>
+                            <option value="dominant13">Dominant 13</option>
+                            <option value="major7sharp11">Major 7♯11</option>
+                            <option value="dominant7flat9">Dominant 7♭9</option>
+                            <option value="dominant7sharp9">Dominant 7♯9</option>
+                            <option value="dominant7flat13">Dominant 7♭13</option>
+                            <option value="dominant9sharp11">Dominant 9♯11</option>
+                            <option value="dominant9flat13">Dominant 9♭13</option>
+                            <option value="minor11">Minor 11</option>
+                            <option value="major13">Major 13</option>
+                            <option value="dominant13sharp11">Dominant 13♯11</option>
+                            <option value="altered">Altered</option>
+                            <option value="lydian_dominant">Lydian Dom</option>
+                        </optgroup>
+                        <optgroup label="Others">
+                            <option value="power">Power Chord</option>
+                            <option value="major6">Major 6</option>
+                            <option value="minor6">Minor 6</option>
+                            <option value="major6_9">Major 6/9</option>
+                            <option value="minor6_9">Minor 6/9</option>
+                            <option value="sus4_9">Sus4/9</option>
+                            <option value="add9">Add9</option>
+                            <option value="minor_add9">Minor Add9</option>
+                            <option value="add11">Add11</option>
+                        </optgroup>
+                    </select>
+                    <button class="reset-btn" id="resetScaleChordBtn" title="Reset Scale & Chord">✕</button>
+                </div>
+            </div>
             <div class="preset-controls">
                 <label style="font-size:0.7em; flex-shrink:0;">Presets:</label>
                 <select id="presetSelect">
@@ -1270,8 +1751,12 @@ layout: "base.njk"
                 <button class="preset-btn" id="deletePresetBtn">Del</button>
                 <button class="preset-btn" id="exportPresetsBtn">Export</button>
                 <button class="preset-btn" id="importPresetsBtn">Import</button>
+                <input type="file" id="importFileInput" style="display:none;" accept=".json">
+            </div>
+			<div class="utility-bar">
                 <button class="preset-btn hide-panels-btn" id="hidePanelsBtn" title="Hide/Show control panels (Ctrl+H)">⊞</button>
                 <button class="preset-btn compact-btn" id="compactBtn" title="Toggle compact mode">⎔</button>
+			<button class="help-btn" id="helpToggleBtn" title="Toggle help menu">?</button>
                 <div class="row-height-control">
                     <label>H:</label>
                     <select id="rowHeightSelect">
@@ -1290,8 +1775,14 @@ layout: "base.njk"
                         <option value="36">36</option>
                     </select>
                 </div>
-                <input type="file" id="importFileInput" style="display:none;" accept=".json">
-            </div>
+				<div class="control-group no-label">
+					<select id="waveformSelect" style="min-width:80px;">
+						<option value="sine">Sine</option>
+						<option value="triangle">Triangle</option>
+						<option value="sawtooth">Sawtooth</option>
+						<option value="square">Square</option>
+					</select>
+				</div>
             <div class="instrument-stats" id="instrumentStats">
                 <span class="stat-item">
                     <span class="stat-label">Range:</span>
@@ -1308,9 +1799,10 @@ layout: "base.njk"
                     <span class="stat-value" id="octaveStats">-</span>
                 </span>
             </div>
+			</div>
             <div class="help-container">
                 <div class="help-content" id="helpContent">
-<div class="help-section">
+					<div class="help-section">
                         <div class="help-title">Keyboard Shortcuts</div>
                         <div class="help-item">
                             <span class="help-command"><kbd>Ctrl+S</kbd></span>
