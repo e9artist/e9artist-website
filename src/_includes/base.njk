@@ -75,141 +75,6 @@
     </div>
 </footer>
 
-<style>
-/* ============================================================ */
-/* NAV — DESKTOP (grid: logo | links | spacer)                  */
-/* ============================================================ */
-nav {
-    position: relative;   /* establishes stacking context for the nav */
-    z-index: 1000;        /* sits above main content */
-}
-.nav-container {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;  /* logo | links | spacer */
-    align-items: center;
-    max-width: 1400px;         /* or whatever your new max-width is */
-    margin: 0 auto;
-    padding: 0 1rem;
-    gap: 1rem;
-}
-
-.nav-logo {
-    justify-self: start;
-    display: flex;
-    align-items: center;
-}
-
-.nav-links {
-    justify-self: center;
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 0.75rem;
-    justify-content: center;
-}
-.nav-links a {
-    padding: 0 0.25rem;    /* or whatever your default link padding is */
-}
-
-
-/* Hamburger button — hidden on desktop */
-.nav-toggle {
-    display: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.5rem;
-    z-index: 1001;
-    flex-direction: column;
-    gap: 5px;
-    justify-content: center;
-    align-items: center;
-    width: 40px;
-    height: 40px;
-}
-
-.hamburger-line {
-    display: block;
-    width: 24px;
-    height: 2px;
-    background: currentColor;
-    border-radius: 2px;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-/* ============================================================ */
-/* NAV — MOBILE (breakpoint at 900px)                           */
-/* ============================================================ */
-
-@media (max-width: 900px) {
-
-    /* Collapse to two columns: logo | hamburger */
-    .nav-container {
-        grid-template-columns: 1fr auto;
-        padding: 0.75rem 1rem;
-        position: relative;
-    }
-
-    /* Show hamburger */
-    .nav-toggle {
-        display: flex;
-		z-index: 1001;
-    }
-
-    /* Animate hamburger into an X when menu is open */
-    .nav-toggle[aria-expanded="true"] .hamburger-line:nth-child(1) {
-        transform: translateY(7px) rotate(45deg);
-    }
-    .nav-toggle[aria-expanded="true"] .hamburger-line:nth-child(2) {
-        opacity: 0;
-    }
-    .nav-toggle[aria-expanded="true"] .hamburger-line:nth-child(3) {
-        transform: translateY(-7px) rotate(-45deg);
-    }
-
-    /* Links become a dropdown drawer */
-    .nav-links {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        flex-direction: column;
-        align-items: stretch;
-        justify-content: flex-start;
-        gap: 0;
-        background: var(--nav-bg, #1a1a1a);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-
-        /* Closed state */
-        max-height: 0;
-        overflow: hidden;
-        opacity: 0;
-        visibility: hidden;
-        transition: max-height 0.3s ease, opacity 0.2s ease, visibility 0.2s ease;
-    }
-
-    /* Open state — cap height at remaining viewport, allow scroll if needed */
-    .nav-links.open {
-        max-height: calc(100vh - 60px);   /* 60px ≈ nav bar height */
-        max-height: calc(100dvh - 60px);  /* dvh handles iOS chrome collapse */
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
-        opacity: 1;
-        visibility: visible;
-    }
-
-    .nav-links a {
-        padding: 0.9rem 1.25rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        text-align: left;
-    }
-    .nav-links a:last-child {
-        border-bottom: none;
-    }
-}
-</style>
-
 <script>
 function copyPageUrl() {
     const url = window.location.href;
@@ -254,13 +119,14 @@ if (navToggle && navLinks) {
     });
 }
 	
+// ------------------------------------------------------------
+// THEME TOGGLE — desktop right-click + mobile long-press
+// ------------------------------------------------------------
 (function() {
     const html = document.documentElement;
     const logoLink = document.querySelector('.nav-logo a');
 
-    // ------------------------------------------------------------
-    // THEME: apply saved preference (default dark)
-    // ------------------------------------------------------------
+    // Apply saved theme (default dark)
     const savedTheme = localStorage.getItem('theme') || 'dark';
     html.setAttribute('data-theme', savedTheme);
     if (!localStorage.getItem('theme')) {
@@ -274,35 +140,40 @@ if (navToggle && navLinks) {
         localStorage.setItem('theme', newTheme);
     }
 
-    if (!logoLink) return; // bail if the logo isn't on this page
+    if (!logoLink) return;
 
     // ------------------------------------------------------------
-    // DESKTOP: right-click the logo to toggle
+    // Unified handler: fires from right-click, Android long-press
+    // (via contextmenu), and iOS long-press (via touch timer).
     // ------------------------------------------------------------
+    let handledByContextMenu = false;
+
     logoLink.addEventListener('contextmenu', function(e) {
-        e.preventDefault();  // suppress browser right-click menu
+        e.preventDefault();               // suppress browser menu / link preview
+        handledByContextMenu = true;
         toggleTheme();
+        // Reset the flag after this interaction settles
+        setTimeout(() => { handledByContextMenu = false; }, 1000);
     });
 
-    // ------------------------------------------------------------
-    // MOBILE: long-press (600ms) the logo to toggle
-    // Also suppresses iOS Safari's link preview / context menu
-    // ------------------------------------------------------------
+    // Touch fallback — only runs if contextmenu didn't already fire
+    // (i.e., on iOS Safari, which doesn't fire contextmenu for links)
     let pressTimer = null;
     let longPressTriggered = false;
     const LONG_PRESS_MS = 600;
 
-    logoLink.addEventListener('touchstart', function(e) {
+    logoLink.addEventListener('touchstart', function() {
         longPressTriggered = false;
+        handledByContextMenu = false;
         pressTimer = setTimeout(() => {
             pressTimer = null;
+            if (handledByContextMenu) return;   // Android already handled it
             longPressTriggered = true;
-            if (navigator.vibrate) navigator.vibrate(15);  // subtle haptic on Android
+            if (navigator.vibrate) navigator.vibrate(15);
             toggleTheme();
         }, LONG_PRESS_MS);
     }, { passive: true });
 
-    // Cancel the timer if the finger moves (user is scrolling)
     logoLink.addEventListener('touchmove', function() {
         if (pressTimer) {
             clearTimeout(pressTimer);
@@ -310,20 +181,17 @@ if (navToggle && navLinks) {
         }
     }, { passive: true });
 
-    // Cancel the timer if the finger lifts before 600ms
     logoLink.addEventListener('touchend', function(e) {
         if (pressTimer) {
             clearTimeout(pressTimer);
             pressTimer = null;
         }
         if (longPressTriggered) {
-            // Prevent the click that would follow the long press
-            e.preventDefault();
+            e.preventDefault();  // prevent the click that would follow
             longPressTriggered = false;
         }
     });
 
-    // Cancel if the user's touch is interrupted (call, gesture, etc.)
     logoLink.addEventListener('touchcancel', function() {
         if (pressTimer) {
             clearTimeout(pressTimer);
@@ -331,9 +199,7 @@ if (navToggle && navLinks) {
         }
     });
 
-    // ------------------------------------------------------------
-    // ACCESSIBILITY: keyboard users can focus the logo and press T
-    // ------------------------------------------------------------
+    // Keyboard accessibility
     logoLink.addEventListener('keydown', function(e) {
         if (e.key === 't' || e.key === 'T') {
             e.preventDefault();

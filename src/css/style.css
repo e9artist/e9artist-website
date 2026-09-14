@@ -53,7 +53,10 @@ body {
     line-height: 1.6;
 }
 
-/* Navigation */
+/* ============================================================ */
+/* NAVIGATION                                                    */
+/* ============================================================ */
+
 nav {
     background-color: var(--nav-bg);
     padding: 15px 20px;
@@ -61,33 +64,36 @@ nav {
     margin-bottom: 10px;
     border-bottom: 2px solid var(--border-color);
     box-shadow: 0 2px 10px var(--shadow);
+    position: relative;   /* establishes stacking context */
+    z-index: 1000;        /* sits above main content */
 }
 
 .nav-container {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;  /* logo | links | spacer */
     align-items: center;
-    flex-wrap: wrap;
-    gap: 5px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    gap: 1rem;
 }
 
-/* Navigation with Logo - Tighter spacing */
+/* ---- Logo (left column) ---- */
+
 .nav-logo {
+    justify-self: start;
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    margin-right: 0;
 }
 
-/* Fix: Target the logo link directly */
 .nav-logo a {
     display: inline-block;
     line-height: 0;
-    margin-right: 0;
-    padding-right: 2px;
-    padding-left: 3px;
-    padding-top: 3px;
-    padding-bottom: 3px;
+    padding: 3px 2px 3px 3px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .logo-img {
@@ -103,28 +109,24 @@ nav {
 }
 
 /* Light/Dark Mode Logo Switching */
-.logo-light {
-    display: block !important;
-}
-.logo-dark {
-    display: none !important;
-}
+.logo-light { display: block !important; }
+.logo-dark  { display: none  !important; }
 
-/* Show dark logo in dark mode, hide light logo */
-[data-theme="dark"] .logo-light {
-    display: none !important;
-}
-[data-theme="dark"] .logo-dark {
-    display: block !important;
-}
+[data-theme="dark"] .logo-light { display: none  !important; }
+[data-theme="dark"] .logo-dark  { display: block !important; }
+
+/* ---- Links (center column) ---- */
 
 .nav-links {
+    justify-self: center;
     display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    align-items: center;
-    margin-left: 0;
-    padding-left: 0;
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.nav-links a {
+    padding: 0 0.25rem;
 }
 
 nav a {
@@ -132,7 +134,7 @@ nav a {
     text-decoration: none;
     padding: 5px 10px;
     border-radius: 4px;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 nav a:hover {
@@ -140,7 +142,8 @@ nav a:hover {
     background-color: var(--playlist-hover);
 }
 
-/* Support link in navigation */
+/* ---- Support link (styled pill) ---- */
+
 .support-nav-link {
     background: #008CFF;
     color: white !important;
@@ -148,7 +151,7 @@ nav a:hover {
     border-radius: 20px;
     font-weight: bold;
     transition: all 0.3s ease;
-	white-space: nowrap;
+    white-space: nowrap;
 }
 
 .support-nav-link:hover {
@@ -157,27 +160,107 @@ nav a:hover {
     color: white !important;
 }
 
-[data-theme="dark"] .support-nav-link {
-    background: #0099FF;
-}
+[data-theme="dark"] .support-nav-link       { background: #0099FF; }
+[data-theme="dark"] .support-nav-link:hover { background: #1aa3ff !important; }
 
-[data-theme="dark"] .support-nav-link:hover {
-    background: #1aa3ff !important;
-}
+/* ---- Hamburger button (mobile only) ---- */
 
-#theme-toggle {
+.nav-toggle {
+    display: none;              /* hidden on desktop */
     background: none;
     border: none;
-    font-size: 1.5em;
     cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-    background-color: var(--card-bg);
+    padding: 0.5rem;
+    z-index: 1001;
+    flex-direction: column;
+    gap: 5px;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    color: var(--text-color);   /* drives currentColor for the lines */
 }
 
-#theme-toggle:hover {
-    background-color: var(--playlist-hover);
+.hamburger-line {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* ============================================================ */
+/* NAVIGATION — MOBILE (breakpoint 900px)                        */
+/* ============================================================ */
+
+@media (max-width: 900px) {
+
+    /* Collapse grid to two columns: logo | hamburger */
+    .nav-container {
+        grid-template-columns: 1fr auto;
+        padding: 0.75rem 1rem;
+        position: relative;
+    }
+
+    /* Show hamburger */
+    .nav-toggle {
+        display: flex;
+    }
+
+    /* Animate hamburger into an X when open */
+    .nav-toggle[aria-expanded="true"] .hamburger-line:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+    }
+    .nav-toggle[aria-expanded="true"] .hamburger-line:nth-child(2) {
+        opacity: 0;
+    }
+    .nav-toggle[aria-expanded="true"] .hamburger-line:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+    }
+
+    /* Links become a dropdown drawer */
+    .nav-links {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 0;
+        background: var(--nav-bg);
+        border-top: 1px solid var(--border-color);
+        box-shadow: 0 4px 12px var(--shadow);
+
+        /* Closed state */
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        visibility: hidden;
+        transition: max-height 0.3s ease, opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    /* Open state — cap at remaining viewport, allow scroll if needed */
+    .nav-links.open {
+        max-height: calc(100vh - 60px);   /* fallback */
+        max-height: calc(100dvh - 60px);  /* iOS chrome-aware */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .nav-links a {
+        padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        text-align: left;
+    }
+
+    .nav-links a:last-child {
+        border-bottom: none;
+    }
 }
 
 /* Links */
@@ -665,46 +748,7 @@ code {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-    .nav-container {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-    
-    .nav-logo {
-        justify-content: center;
-        margin-right: 0;
-    }
-    
-    .nav-logo a {
-        margin-right: 0;
-    }
-    
-    .logo-img {
-        height: 40px;
-        margin-right: 0;
-    }
-    
-    .nav-links {
-        justify-content: center;
-        gap: 3px;
-    }
-    
-    .nav-links a {
-        padding: 4px 8px;
-        font-size: 0.9em;
-    }
-    
-    .support-nav-link {
-        padding: 4px 12px !important;
-        font-size: 0.9em !important;
-    }
-    
-    #theme-toggle {
-        align-self: center;
-    }
-    
+@media (max-width: 768px) { 
     /* FIXED: Mobile play button centering */
     .controls button {
         padding: 8px 12px;
