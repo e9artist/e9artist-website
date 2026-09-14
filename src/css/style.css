@@ -148,6 +148,7 @@ nav a:hover {
     border-radius: 20px;
     font-weight: bold;
     transition: all 0.3s ease;
+	white-space: nowrap;
 }
 
 .support-nav-link:hover {
@@ -194,6 +195,7 @@ a:hover {
     text-decoration: none;
     font-size: 0.9em;
     transition: color 0.3s ease;
+	white-space: nowrap;
 }
 
 .rss-link:hover {
