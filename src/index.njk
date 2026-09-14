@@ -101,33 +101,37 @@ layout: "base.njk"
     position: relative;
     display: inline-block;
     margin-bottom: 10px;
-    width: 300px;      /* Your logo's max-width */
-    height: auto;
+    /*width: 300px;*/      /* Your logo's max-width */
+    /*height: auto;*/
+	aspect-ratio: 302 / 213;
 }
 
 /* The glow element - forced rectangle with box-shadow */
 .glow-sphere {
     position: absolute;
-	visibility: hidden;
+    visibility: hidden;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0.74);
-    width: 298px !important; /*272*/
-    height: 186px !important;/*193*/
+    width: 298px !important;
+    height: 186px !important;
     border-radius: 0 !important;
     pointer-events: none;
     z-index: 0;
-    opacity: 0.1;
-    transition: opacity 2.7s ease-in-out, 
-                transform 2.7s ease-in-out,
-		box-shadow 2.7s ease-in-out !important;
-    /* ✅ RECTANGULAR GLOW WITH BOX-SHADOW */
-    box-shadow: 
-        0 0 30px 15px rgba(255, 255, 255, 0.9),
+    opacity: 0.72;                          /* match .off */
+    box-shadow:                             /* match .off */
+        0 0 50px 30px rgba(255, 255, 255, 0.9),
         0 0 60px 30px rgba(255, 255, 255, 0.4),
-        0 0 90px 50px rgba(255, 255, 255, 0.15) !important;
+        0 0 60px 60px rgba(255, 255, 255, 0.15) !important;
     background: transparent !important;
+    transition: opacity 2s ease-in, 
+                transform 2s ease-in, 
+                box-shadow 2s ease-in !important;   /* match .off */
+    will-change: opacity, transform, box-shadow;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
+	 
 .glow-sphere.ready {
     visibility: visible;
 }
@@ -246,8 +250,9 @@ layout: "base.njk"
     pointer-events: none;
     z-index: 0.8;
     opacity: 1;
-    background: rgba(255, 255, 255, 1);
-    transition: background 2.7s ease-in-out, opacity 2.7s ease-in-out !important;
+    background: rgba(215, 215, 215, 1);    /* match .off ~ .inner-glow */
+    transition: background 2s ease-in-out, 
+                opacity 2s ease-in-out !important;
 }
 
 /* When glow is ON, show the inner glow */
