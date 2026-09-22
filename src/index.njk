@@ -93,10 +93,6 @@ layout: "base.njk"
 /* MORSE CODE GLOW - Hero Logo Styling                          */
 /* ============================================================ */
 
-/* ============================================================ */
-/* MORSE CODE GLOW - BOX SHADOW APPROACH (MOST RELIABLE)       */
-/* ============================================================ */
-
 .logo-container {
     position: relative;
     display: inline-block;
@@ -118,7 +114,7 @@ layout: "base.njk"
     border-radius: 0 !important;
     pointer-events: none;
     z-index: 0;
-    opacity: 0.72;                          /* match .off */
+    opacity: 0;                          /* match .off */
     box-shadow:                             /* match .off */
         0 0 50px 30px rgba(255, 255, 255, 0.9),
         0 0 60px 30px rgba(255, 255, 255, 0.4),
@@ -134,6 +130,14 @@ layout: "base.njk"
 	 
 .glow-sphere.ready {
     visibility: visible;
+}
+.glow-sphere.ready.off {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.74);
+    /* box-shadow for off */
+}
+.glow-sphere.no-transition {
+    transition: none !important;
 }
 
 /* Glow ON - bright */
@@ -413,8 +417,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // ✅ Set initial state and reveal BEFORE starting the Morse animation
     const glow = document.getElementById('morseGlow');
     if (glow) {
+      	glow.classList.add('no-transition');  // suppress transitions
         glow.classList.add('off');
         glow.classList.add('ready');
+        void glow.offsetWidth;
+        glow.classList.remove('no-transition');
     }
 
     const stopMorse = startMorseGlow();

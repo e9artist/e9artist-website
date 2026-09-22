@@ -135,6 +135,9 @@ nav a {
     padding: 5px 10px;
     border-radius: 4px;
     transition: background-color 0.2s, color 0.2s;
+      line-height: 1;              /* ← add this */
+    display: inline-flex;        /* ← makes padding/centering predictable */
+    align-items: center;
 }
 
 nav a:hover {
