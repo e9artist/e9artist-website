@@ -11,7 +11,10 @@ module.exports = async function(eleventyConfig) {
     eleventyConfig.addPassthroughCopy("src/audio"); 
     eleventyConfig.addPassthroughCopy("src/music");
     eleventyConfig.addPassthroughCopy("src/images");
-    eleventyConfig.addPassthroughCopy("src/downloads"); 
+    eleventyConfig.addPassthroughCopy("src/downloads");
+    eleventyConfig.addPassthroughCopy({ "src/tools/metronome": "tools/metronome" });
+    // Don't process the metronome folder as templates — just copy it
+    eleventyConfig.ignores.add("src/tools/metronome");
     
     // Collection for blog posts
     eleventyConfig.addCollection("blog", function(collection) {
