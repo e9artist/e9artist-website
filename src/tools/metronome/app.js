@@ -5711,6 +5711,35 @@
 
             timerID = setTimeout(scheduler, lookahead);
         }
+        
+        // Sends a very short, very quiet tone to force Android's AAudio backend
+        // to open a real playback stream and stabilize its buffer size before
+        // the first scheduled beat. Silence alone does NOT trigger this, and
+        // without it the first beat has a click on Android Chromium browsers.
+        // See: (Chromium issue about AAudio callback interval after reload)
+        function primeAudioPipelineWithTone() {
+            if (!audioCtx) return;
+            
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.value = 440; // any frequency
+            
+            // Start extremely quiet, ramp up to a still-quiet level, then down to zero.
+            // 0.0001 is roughly -80dB, essentially inaudible on phone speakers
+            // but non-zero for the audio pipeline.
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.0001, now + 0.005);
+            gain.gain.linearRampToValueAtTime(0, now + 0.010);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.005); // 5ms total
+        }
 
         let startInProgress = false;
         
@@ -5719,11 +5748,11 @@
             startInProgress = true;
         
             try {
-                if (isPlaying) return;
+                primeAudioPipelineWithTone();
+                
                 if (audioCtx.state === 'suspended') {
                     audioCtx.resume();
                 }
-                const wasFirstStart = !isInitialized;
                 if (!isInitialized) {
                     initializeAudioEngine();
                 }
@@ -5751,9 +5780,7 @@
                 hasTriggeredOnce = false;
                 barsDisplay.textContent = '0';
                 beatDisplay.textContent = '1';
-                // Give the audio graph a little more headroom on the very first
-                // start after page load, since the graph has just been built.
-                nextNoteTime = audioCtx.currentTime + (wasFirstStart ? 0.15 : 0.05);
+                nextNoteTime = audioCtx.currentTime + 0.05;
                 updateBeatGrid(0);
                 scheduler();
                 startBtn.textContent = 'Stop';
