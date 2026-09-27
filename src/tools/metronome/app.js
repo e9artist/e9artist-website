@@ -4,16 +4,12 @@
 
         const audioCtx = new(window.AudioContext || window.webkitAudioContext)();
 
-        // ============================================================
         //  CONSTANTS
-        // ============================================================
-
+        const APP_VERSION = '1.0.0'; //  APP VERSION
+        const APP_BUILD_DATE = '2026-09-26'; //LATEST RELEASE DATE
         const MAX_PRESETS = 32;
 
-        // ============================================================
         //  ACCENT LEVEL CONSTANTS
-        // ============================================================
-
         const ACCENT_LEVELS = {
             0: { label: 'Mute',   color: '#e94560' },
             1: { label: 'Soft',   color: '#4a9eff' },
@@ -86,9 +82,7 @@
             2: 0.7,
             3: 1.0
         };
-
         let accentMultipliers = { ...DEFAULT_ACCENT_MULTIPLIERS };
-
         const ACCENT_LEVEL_LABELS = {
             1: 'Soft',
             2: 'Normal',
@@ -143,6 +137,22 @@
         let songDenominatorMultiplier = 1.0;
         let songStartAccent = 2.0;              // multiplier applied to beat 1 of bar 1 of step 1
         const DEFAULT_SONG_START_ACCENT = 2.0;
+        let songLoopCount = 1;
+        let songLoopsSinceAction = 1;
+        // Tap tempo
+        let tapTimes = [];                      // timestamps (ms) of recent taps
+        let tapTempoCount = 3;                  // taps required before BPM updates
+        let tapResetTimer = null;
+        const DEFAULT_TAP_TEMPO_COUNT = 3;
+        const TAP_TIMEOUT_MS = 3500;            // reset history after this much silence
+        //  TIMER / STOPWATCH
+        let timerMode = 'off';           // 'off' | 'countdown' | 'stopwatch' | 'completed'
+        let timerRemainingMs = 0;        // countdown: ms remaining; stopwatch: ms elapsed
+        let timerLastTick = 0;           // performance.now() of the last tick
+        let timerIntervalId = null;
+        let timerCompletedTargetMs = 0;  // the original target of the completed countdown
+        const TIMER_MAX_MS = 120 * 60 * 1000;  // 2 hours
+        const TIMER_TICK_MS = 200;
         
         function getAccentMultiplier(level) {
             if (level === 0) return 0;
@@ -178,6 +188,76 @@
                 console.warn('Could not save accent levels:', e);
             }
         }
+        
+        // ============================================================
+        //  FOLDER STATE (collapse/expand persistence)
+        // ============================================================
+        
+        const FOLDER_STATE_KEY = 'webtronomFolderState';
+        
+        function loadFolderState() {
+            try {
+                const raw = localStorage.getItem(FOLDER_STATE_KEY);
+                if (!raw) return {};
+                const parsed = JSON.parse(raw);
+                return (parsed && typeof parsed === 'object') ? parsed : {};
+            } catch (e) {
+                console.warn('Could not load folder state:', e);
+                return {};
+            }
+        }
+        
+        function saveFolderState(state) {
+            try {
+                localStorage.setItem(FOLDER_STATE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.warn('Could not save folder state:', e);
+            }
+        }
+        
+        function isFolderExpanded(folderName) {
+            const state = loadFolderState();
+            // Default is collapsed for unknown folders
+            return state[folderName] === 'expanded';
+        }
+        
+        function setFolderExpanded(folderName, expanded) {
+            const state = loadFolderState();
+            state[folderName] = expanded ? 'expanded' : 'collapsed';
+            saveFolderState(state);
+        }
+        
+        function loadTapTempoCount() {
+            try {
+                const raw = localStorage.getItem('webtronomTapTempoCount');
+                const parsed = parseInt(raw, 10);
+                if (parsed >= 2 && parsed <= 5) {
+                    tapTempoCount = parsed;
+                }
+            } catch (e) {
+                console.warn('Could not load tap tempo count:', e);
+            }
+        }
+        
+        function saveTapTempoCount() {
+            try {
+                localStorage.setItem('webtronomTapTempoCount', tapTempoCount.toString());
+            } catch (e) {
+                console.warn('Could not save tap tempo count:', e);
+            }
+        }
+        
+        function setTapTempoCount(n) {
+            const parsed = parseInt(n, 10);
+            if (!(parsed >= 2 && parsed <= 5)) return;
+            if (parsed === tapTempoCount) return;
+            tapTempoCount = parsed;
+            saveTapTempoCount();
+            updateTapTempoCountUI();
+            resetTapTempo();
+            saveState();
+        }
+        
         function loadTempoDecimals() {
             try {
                 const raw = localStorage.getItem('webtronomTempoDecimals');
@@ -307,6 +387,29 @@
                 console.warn('Could not save songs:', e);
             }
         }
+        
+        function saveSelectedSong() {
+            try {
+                if (selectedSongId) {
+                    localStorage.setItem('webtronomSelectedSong', selectedSongId);
+                } else {
+                    localStorage.removeItem('webtronomSelectedSong');
+                }
+            } catch (e) {
+                console.warn('Could not save selected song:', e);
+            }
+        }
+        
+        function loadSelectedSong() {
+            try {
+                const raw = localStorage.getItem('webtronomSelectedSong');
+                if (raw && songs[raw]) {
+                    selectedSongId = raw;
+                }
+            } catch (e) {
+                console.warn('Could not load selected song:', e);
+            }
+        }
 
         function generateSongId() {
             songIdCounter += 1;
@@ -341,9 +444,16 @@
                 document.getElementById('copyFieldVolume').checked ||
                 document.getElementById('copyFieldAccent').checked ||
                 document.getElementById('copyFieldProbability').checked;
-
+        
             const confirmBtn = document.getElementById('copyPartialConfirm');
             if (confirmBtn) confirmBtn.disabled = !anyChecked;
+        
+            const remainingBtn = document.getElementById('copyPartialPasteRemaining');
+            if (remainingBtn) {
+                // Also disabled if the source beat is the last one — nothing to paste to
+                const sourceIsLast = copyPartialBeatIndex >= 32;
+                remainingBtn.disabled = !anyChecked || sourceIsLast;
+            }
         }
 
         function confirmCopyPartial() {
@@ -405,6 +515,7 @@
             };
             selectedSongId = id;
             saveSongs();
+            saveSelectedSong();
             renderSongsModal();
         }
 
@@ -420,6 +531,7 @@
             delete songs[id];
             if (selectedSongId === id) selectedSongId = null;
             saveSongs();
+            saveSelectedSong();  
             renderSongsModal();
         }
 
@@ -456,6 +568,7 @@
                 item.appendChild(meta);
                 item.addEventListener('click', () => {
                     selectedSongId = id;
+                    saveSelectedSong();
                     renderSongsModal();
                 });
                 list.appendChild(item);
@@ -637,6 +750,8 @@
             currentStepIndex = 0;
             barsInStep = 0;
             stepBeatCount = 0;
+            songLoopCount = 1;
+            songLoopsSinceAction = 1;
             pendingSongTransition = false;
 
             // Always start at step 1. The multipliers, if preserved, are
@@ -791,30 +906,35 @@
             const strip = document.getElementById('songStrip');
             const nameEl = document.getElementById('songStripName');
             const stepEl = document.getElementById('songStripStep');
+            const loopEl = document.getElementById('songStripLoop');
             if (!strip || !nameEl || !stepEl) return;
-
+        
             if (!songModeEnabled || !activeSongId || !songs[activeSongId]) {
                 strip.classList.remove('visible');
                 return;
             }
-
+        
             const song = songs[activeSongId];
             const step = song.steps[currentStepIndex];
             if (!step) {
                 strip.classList.remove('visible');
                 return;
             }
-
+        
             strip.classList.add('visible');
             nameEl.textContent = song.name;
-
+        
             const barDisplay = Math.min(barsInStep + 1, step.barCount);
             const multPct = Math.round(songTempoMultiplier * 100);
-
+        
             stepEl.textContent =
                 'Step ' + (currentStepIndex + 1) + ' of ' + song.steps.length +
                 ' • Bar ' + barDisplay + ' of ' + step.barCount +
                 ' • ' + multPct + '%';
+        
+            if (loopEl) {
+                loopEl.textContent = '⟳ ' + songLoopCount;
+            }
         }
 
         function updateSongModeUI() {
@@ -826,6 +946,9 @@
                 topSelect.disabled = songModeEnabled;
                 topSelect.style.opacity = songModeEnabled ? '0.4' : '1';
                 topSelect.style.cursor = songModeEnabled ? 'default' : 'pointer';
+            }
+            if (ninInput) {
+                ninInput.placeholder = songModeEnabled ? 'Loops' : 'Bars';
             }
             updateTimeSignatureDisplay();
             if (isPresetModalOpen) renderPresetModal();
@@ -965,21 +1088,8 @@
             const pattern = document.getElementById('populateAccentPattern');
             if (pattern) pattern.value = 'beat1';
 
-            // Refresh sample dropdown
-            const sampleSelect = document.getElementById('populateSampleSelect');
-            if (sampleSelect) {
-                sampleSelect.innerHTML = '';
-                if (sampleLibrary.length === 0) {
-                    sampleSelect.innerHTML = '<option value="">-- No samples --</option>';
-                } else {
-                    for (const s of sampleLibrary) {
-                        const opt = document.createElement('option');
-                        opt.value = s.id;
-                        opt.textContent = s.name + ' (' + s.duration.toFixed(2) + 's)';
-                        sampleSelect.appendChild(opt);
-                    }
-                }
-            }
+            // Reset the sample picker to no selection
+            setSamplePickerSelection('populateSamplePicker', null);
         }
 
         function openPopulateModal() {
@@ -990,6 +1100,7 @@
         }
 
         function closePopulateModal() {
+            closeSamplePicker('populateSamplePicker');
             const modal = document.getElementById('populateModal');
             if (modal) modal.classList.remove('show');
         }
@@ -997,7 +1108,6 @@
         function applyPopulateForm() {
             const freqSlider = document.getElementById('populateFreqSlider');
             const waveformSelect = document.getElementById('populateWaveform');
-            const sampleSelect = document.getElementById('populateSampleSelect');
             const volSlider = document.getElementById('populateVolSlider');
             const probSlider = document.getElementById('populateProbSlider');
             const patternSelect = document.getElementById('populateAccentPattern');
@@ -1006,7 +1116,7 @@
                 source: populateSource,
                 frequency: freqSlider ? semitonesToFrequency(parseInt(freqSlider.value)) : 800,
                 waveform: waveformSelect ? waveformSelect.value : 'square',
-                sampleId: sampleSelect ? (sampleSelect.value || null) : null,
+                sampleId: getSamplePickerSelection('populateSamplePicker'),
                 volume: volSlider ? parseInt(volSlider.value) / 100 : 0.8,
                 probability: probSlider ? parseInt(probSlider.value) / 100 : 1.0,
                 accentPattern: patternSelect ? patternSelect.value : 'beat1'
@@ -1047,55 +1157,85 @@
                 timeSig.classList.remove('song-mode');
             }
         }
+        
+        function isAnyModalOpen() {
+            return tempoModal.classList.contains('show') ||
+                   rangeModal.classList.contains('show') ||
+                   presetModal.classList.contains('show') ||
+                   beatEditorModal.classList.contains('show') ||
+                   sampleManagerModal.classList.contains('show') ||
+                   copyToModal.classList.contains('show') ||
+                   settingsModal.classList.contains('show') ||
+                   populateModal.classList.contains('show') ||
+                   songsModal.classList.contains('show') ||
+                   importModal.classList.contains('show') ||
+                   copyPartialModal.classList.contains('show') ||
+                   shortcutsModal.classList.contains('show');
+        }
+        
+        function isTypingInField(e) {
+            const tag = (e.target.tagName || '').toLowerCase();
+            return tag === 'input' || tag === 'textarea' || e.target.isContentEditable;
+        }
+        
+        function shouldHandleShortcut(e) {
+            // Ignore if a modifier is held — let the browser have Ctrl+R, Ctrl+S, etc.
+            if (e.ctrlKey || e.metaKey || e.altKey) return false;
+            // Ignore if the user is typing into a field
+            if (isTypingInField(e)) return false;
+            // Ignore if any modal is open
+            if (isAnyModalOpen()) return false;
+            return true;
+        }
 
         // ============================================================
         //  PER-BEAT SETTINGS (UPDATED)
         // ============================================================
 
-		function getDefaultBeatSettings() {
-			const settings = {};
-			for (let i = 1; i <= 32; i++) {
-				settings[i] = {
-					source: 'oscillator',
-					frequency: 880,
-					volume: 0.8,
-					waveform: 'square',
-					sampleId: null,
-					accentLevel: i === 1 ? 3 : 2,  // ← Beat 1 gets accent!
-					probability: 1.0
-				};
-			}
-			return settings;
-		}
-
-        let beatSettings = getDefaultBeatSettings();
-
-		function loadBeatSettings() {
-			const saved = localStorage.getItem('webtronomBeatSettings');
-			if (saved) {
-				try {
-					const parsed = JSON.parse(saved);
-					for (let i = 1; i <= 32; i++) {
-						if (!parsed[i]) {
-							parsed[i] = { source: 'oscillator', frequency: 880, volume: 0.8, waveform: 'square', sampleId: null, accentLevel: i === 1 ? 3 : 2, probability: 1.0 };
-						}
-						if (parsed[i].accentLevel === undefined) {
-							parsed[i].accentLevel = i === 1 ? 3 : 2;
-						}
-						if (parsed[i].probability === undefined) parsed[i].probability = 1.0;
-						if (!parsed[i].source) parsed[i].source = 'oscillator';
-						if (!parsed[i].sampleId) parsed[i].sampleId = null;
-					}
-					beatSettings = parsed;
-					return true;
-				} catch (e) {
-					beatSettings = getDefaultBeatSettings();
-					return false;
-				}
-			}
-			beatSettings = getDefaultBeatSettings();
-			return false;
-		}
+    		function getDefaultBeatSettings() {
+    			const settings = {};
+    			for (let i = 1; i <= 32; i++) {
+    				settings[i] = {
+    					source: 'oscillator',
+    					frequency: 880,
+    					volume: 0.8,
+    					waveform: 'square',
+    					sampleId: null,
+    					accentLevel: i === 1 ? 3 : 2,  // ← Beat 1 gets accent!
+    					probability: 1.0
+    				};
+    			}
+    			return settings;
+    		}
+    
+            let beatSettings = getDefaultBeatSettings();
+    
+    		function loadBeatSettings() {
+    			const saved = localStorage.getItem('webtronomBeatSettings');
+    			if (saved) {
+    				try {
+    					const parsed = JSON.parse(saved);
+    					for (let i = 1; i <= 32; i++) {
+    						if (!parsed[i]) {
+    							parsed[i] = { source: 'oscillator', frequency: 880, volume: 0.8, waveform: 'square', sampleId: null, accentLevel: i === 1 ? 3 : 2, probability: 1.0 };
+    						}
+    						if (parsed[i].accentLevel === undefined) {
+    							parsed[i].accentLevel = i === 1 ? 3 : 2;
+    						}
+    						if (parsed[i].probability === undefined) parsed[i].probability = 1.0;
+    						if (!parsed[i].source) parsed[i].source = 'oscillator';
+    						if (!parsed[i].sampleId) parsed[i].sampleId = null;
+    					}
+    					beatSettings = parsed;
+    					return true;
+    				} catch (e) {
+    					beatSettings = getDefaultBeatSettings();
+    					return false;
+    				}
+    			}
+    			beatSettings = getDefaultBeatSettings();
+    			return false;
+    		}
 
         function saveBeatSettings() {
             localStorage.setItem('webtronomBeatSettings', JSON.stringify(beatSettings));
@@ -1289,6 +1429,10 @@
             const songStartAccent = localStorage.getItem('webtronomSongStartAccent');
             const currentPresetSlot = localStorage.getItem('currentPresetSlot');
             const gridMode = localStorage.getItem('gridMode');
+            const tapTempoCount = localStorage.getItem('webtronomTapTempoCount');
+            const userFolders = localStorage.getItem('webtronomUserFolders');
+            const folderOrderRaw = localStorage.getItem('webtronomFolderOrder');
+            const sampleOrderRaw = localStorage.getItem('webtronomSampleOrder');
 
             const presets = {};
             for (let i = 1; i <= MAX_PRESETS; i++) {
@@ -1312,7 +1456,11 @@
                 globalSettings: globalSettings ? JSON.parse(globalSettings) : null,
                 songStartAccent: songStartAccent !== null ? parseFloat(songStartAccent) : null,
                 currentPresetSlot: currentPresetSlot !== null ? parseInt(currentPresetSlot, 10) : 0,
-                gridMode: gridMode || 'beatgrid'
+                gridMode: gridMode || 'beatgrid',
+                tapTempoCount: tapTempoCount !== null ? parseInt(tapTempoCount, 10) : null,
+                folderOrder: folderOrderRaw ? JSON.parse(folderOrderRaw) : null,
+                sampleOrder: sampleOrderRaw ? JSON.parse(sampleOrderRaw) : null,
+                userFolders: userFolders ? JSON.parse(userFolders) : null
             };
         }
 
@@ -1330,7 +1478,8 @@
                     id: sample.id,
                     name: sample.name,
                     duration: sample.duration,
-                    builtin: false
+                    builtin: false,
+                    folder: sample.folder || null
                 };
 
                 if (includeData) {
@@ -1532,10 +1681,34 @@
                 localStorage.setItem('gridMode', c.gridMode);
             }
             
+            if (typeof c.tapTempoCount === 'number') {
+                localStorage.setItem('webtronomTapTempoCount', c.tapTempoCount.toString());
+            } else {
+                localStorage.removeItem('webtronomTapTempoCount');
+            }
+            
             if (typeof c.songStartAccent === 'number') {
                 localStorage.setItem('webtronomSongStartAccent', c.songStartAccent.toString());
             } else {
                 localStorage.removeItem('webtronomSongStartAccent');
+            }
+            
+            if (c.userFolders) {
+                localStorage.setItem('webtronomUserFolders', JSON.stringify(c.userFolders));
+            } else {
+                localStorage.removeItem('webtronomUserFolders');
+            }
+            
+            if (c.folderOrder) {
+                localStorage.setItem('webtronomFolderOrder', JSON.stringify(c.folderOrder));
+            } else {
+                localStorage.removeItem('webtronomFolderOrder');
+            }
+            
+            if (c.sampleOrder) {
+                localStorage.setItem('webtronomSampleOrder', JSON.stringify(c.sampleOrder));
+            } else {
+                localStorage.removeItem('webtronomSampleOrder');
             }
 
             // Presets: clear all first, then write the imported ones
@@ -1573,6 +1746,7 @@
                                 name: s.name,
                                 duration: s.duration,
                                 builtin: false,
+                                folder: s.folder || null,
                                 data: arrayBuffer
                             };
                             await saveSampleToDB(dbSample);
@@ -1665,6 +1839,16 @@
             };
             reader.readAsText(file);
         }
+        
+        function openShortcutsModal() {
+            const modal = document.getElementById('shortcutsModal');
+            if (modal) modal.classList.add('show');
+        }
+        
+        function closeShortcutsModal() {
+            const modal = document.getElementById('shortcutsModal');
+            if (modal) modal.classList.remove('show');
+        }
 
         // ============================================================
         //  SAMPLE SYSTEM
@@ -1698,8 +1882,7 @@
                     reject('Database not open');
                     return;
                 }
-                
-                // Ensure we're storing a clean ArrayBuffer copy
+        
                 let dataToStore;
                 if (sample.data instanceof ArrayBuffer) {
                     dataToStore = sample.data.slice(0);
@@ -1717,6 +1900,7 @@
                     name: sample.name,
                     duration: sample.duration,
                     builtin: sample.builtin,
+                    folder: sample.folder || null,   // ← new
                     data: dataToStore
                 };
                 const request = store.put(dbSample);
@@ -1772,14 +1956,17 @@
                     buffer: audioBuffer,
                     duration: audioBuffer.duration,
                     builtin: false,
+                    folder: DEFAULT_USER_FOLDER,
                     data: dataCopy
                 };
 
                 const existing = sampleLibrary.find(s => s.name === file.name && !s.builtin);
                 if (existing) {
                     const index = sampleLibrary.indexOf(existing);
+                    // Preserve the folder assignment on re-upload
+                    sample.folder = existing.folder || DEFAULT_USER_FOLDER;
                     sampleLibrary[index] = sample;
-                } else {
+                }  else {
                     sampleLibrary.push(sample);
                 }
 
@@ -1791,7 +1978,7 @@
                 }
 
                 renderSampleManager();
-                updateSampleDropdowns();
+                refreshSamplePickerPanels();
                 saveState();
                 return sample;
             } catch (e) {
@@ -1804,7 +1991,7 @@
         async function loadBuiltinSamples() {
             const MANIFEST_URL = 'samples/samples.json';
             const SAMPLES_DIR = 'samples/';
-
+        
             let manifest;
             try {
                 const res = await fetch(MANIFEST_URL, { cache: 'no-cache' });
@@ -1817,62 +2004,213 @@
                 console.log('Could not fetch samples.json:', e.message);
                 return;
             }
-
+        
             if (!manifest || !Array.isArray(manifest.samples)) {
                 console.warn('samples.json has no "samples" array.');
                 return;
             }
-
+        
             let loadedCount = 0;
-
-            for (const entry of manifest.samples) {
+        
+            for (let i = 0; i < manifest.samples.length; i++) {
+                const entry = manifest.samples[i];
                 if (!entry || !entry.file) continue;
-
+        
                 const url = SAMPLES_DIR + entry.file;
                 const sampleName = entry.name || entry.file;
-
-                // Skip if already loaded (e.g., restored from IndexedDB)
+        
+                // If already loaded (from IndexedDB), just patch in the order info
                 const existing = sampleLibrary.find(s => s.name === sampleName);
                 if (existing) {
                     existing.builtin = true;
+                    existing.builtinOrder = i;
+                    if (typeof entry.folder === 'string' && entry.folder.trim() !== '') {
+                        existing.folder = entry.folder;
+                    }
                     continue;
                 }
-
+        
                 try {
                     const res = await fetch(url);
                     if (!res.ok) {
                         console.warn(`Sample missing: ${url} (${res.status})`);
                         continue;
                     }
-
+        
                     const arrayBuffer = await res.arrayBuffer();
                     const dataCopy = arrayBuffer.slice(0);
                     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
+        
                     const sample = {
                         id: 'builtin_' + sampleName.replace(/\s+/g, '_').toLowerCase(),
                         name: sampleName,
                         buffer: audioBuffer,
                         duration: audioBuffer.duration,
                         builtin: true,
+                        builtinOrder: i,
+                        folder: (typeof entry.folder === 'string' && entry.folder.trim() !== '')
+                            ? entry.folder
+                            : 'Uncategorized',
                         data: dataCopy
                     };
-
+        
                     sampleLibrary.push(sample);
                     loadedCount++;
-
+        
                     try {
                         await saveSampleToDB(sample);
                     } catch (dbErr) {
                         console.warn('Could not persist builtin sample:', dbErr);
                     }
-
                 } catch (e) {
                     console.warn(`Failed to load sample "${sampleName}" from ${url}:`, e);
                 }
             }
-
+        
             console.log(`🎼 Built-in samples loaded: ${loadedCount}`);
+        }
+        
+        function sortSampleLibrary() {
+            sampleLibrary.sort((a, b) => {
+                // Built-ins first, in JSON order
+                if (a.builtin && b.builtin) {
+                    const ao = a.builtinOrder ?? 0;
+                    const bo = b.builtinOrder ?? 0;
+                    return ao - bo;
+                }
+                if (a.builtin && !b.builtin) return -1;
+                if (!a.builtin && b.builtin) return 1;
+        
+                // Both non-builtin: preserve insertion order.
+                // Array.prototype.sort is stable in modern engines, so returning 0
+                // keeps their existing relative order.
+                return 0;
+            });
+        }
+        
+        // ============================================================
+        //  SAMPLE FOLDER GROUPING
+        // ============================================================
+        
+        const DEFAULT_USER_FOLDER = 'User Samples';
+        // ============================================================
+        //  USER FOLDERS (list of folder names, including empty ones)
+        // ============================================================
+        
+        const USER_FOLDERS_KEY = 'webtronomUserFolders';
+        
+        let userFolderNames = [];
+        
+        function loadUserFolderNames() {
+            try {
+                const raw = localStorage.getItem(USER_FOLDERS_KEY);
+                if (!raw) return [];
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed.filter(n => typeof n === 'string') : [];
+            } catch (e) {
+                console.warn('Could not load user folders:', e);
+                return [];
+            }
+        }
+        
+        function saveUserFolderNames() {
+            try {
+                localStorage.setItem(USER_FOLDERS_KEY, JSON.stringify(userFolderNames));
+            } catch (e) {
+                console.warn('Could not save user folders:', e);
+            }
+        }
+        
+        // Combine user-created folders with folders inferred from sample data.
+        // Returns a de-duplicated array with "User Samples" pinned first, then
+        // built-in folders in JSON order, then user folders alphabetically.
+        function getAllFolderNames() {
+            const builtinFolders = [];
+            const derivedUserFolders = new Set();
+        
+            for (const sample of sampleLibrary) {
+                const folder = getSampleFolder(sample);
+                if (sample.builtin) {
+                    if (!builtinFolders.includes(folder)) builtinFolders.push(folder);
+                } else if (folder !== DEFAULT_USER_FOLDER) {
+                    derivedUserFolders.add(folder);
+                }
+            }
+        
+            // Union: explicit user-created folders + derived user folders
+            const userFolders = new Set([...userFolderNames, ...derivedUserFolders]);
+        
+            const result = [];
+            if (sampleLibrary.some(s => getSampleFolder(s) === DEFAULT_USER_FOLDER) ||
+                userFolderNames.includes(DEFAULT_USER_FOLDER)) {
+                result.push(DEFAULT_USER_FOLDER);
+            }
+        
+            for (const name of builtinFolders) {
+                if (!result.includes(name)) result.push(name);
+            }
+        
+            const sortedUser = Array.from(userFolders)
+                .filter(n => n !== DEFAULT_USER_FOLDER)
+                .sort((a, b) => a.localeCompare(b));
+        
+            for (const name of sortedUser) {
+                if (!result.includes(name)) result.push(name);
+            }
+        
+            return result;
+        }
+        
+        function getSampleFolder(sample) {
+            if (sample && typeof sample.folder === 'string' && sample.folder.trim() !== '') {
+                return sample.folder;
+            }
+            return sample && sample.builtin ? 'Uncategorized' : DEFAULT_USER_FOLDER;
+        }
+        
+        function isBuiltinFolder(folderName) {
+            const samples = sampleLibrary.filter(s => getSampleFolder(s) === folderName);
+            return samples.length > 0 && samples.every(s => s.builtin);
+        }
+        
+        // Returns an array of { name, samples: [...] } in display order:
+        //   1) "User Samples" (always first, if it exists)
+        //   2) Built-in folders in the order they first appear in samples.json
+        //   3) User-created folders, alphabetically
+        function getGroupedSamples() {
+            sortSampleLibrary();
+        
+            const byFolder = new Map();
+            for (const sample of sampleLibrary) {
+                const folder = getSampleFolder(sample);
+                if (!byFolder.has(folder)) byFolder.set(folder, []);
+                byFolder.get(folder).push(sample);
+            }
+        
+            const folderNames = getReconciledFolderOrder();
+            const groups = [];
+        
+            for (const name of folderNames) {
+                const samplesInFolder = byFolder.get(name) || [];
+                if (samplesInFolder.length === 0) continue;  // skip empty folders in the picker
+        
+                // Reorder samples within the folder
+                const ordered = getReconciledSampleOrder(name);
+                const idToSample = new Map(samplesInFolder.map(s => [s.id, s]));
+                const orderedSamples = [];
+                for (const id of ordered) {
+                    if (idToSample.has(id)) {
+                        orderedSamples.push(idToSample.get(id));
+                        idToSample.delete(id);
+                    }
+                }
+                // Anything left in idToSample (shouldn't happen given reconcile) appended
+                for (const s of idToSample.values()) orderedSamples.push(s);
+        
+                groups.push({ name, samples: orderedSamples });
+            }
+        
+            return groups;
         }
 
         function playSamplePreview(sampleId) {
@@ -1926,10 +2264,330 @@
             }
 
             sampleLibrary = sampleLibrary.filter(s => s.id !== sampleId);
+
+            // Prune from the sample order map
+            for (const folderName of Object.keys(sampleOrder)) {
+                const arr = sampleOrder[folderName];
+                if (Array.isArray(arr)) {
+                    sampleOrder[folderName] = arr.filter(id => id !== sampleId);
+                    if (sampleOrder[folderName].length === 0) {
+                        delete sampleOrder[folderName];
+                    }
+                }
+            }
+            saveOrderState();
+            
             await deleteSampleFromDB(sampleId);
             renderSampleManager();
-            updateSampleDropdowns();
+            refreshSamplePickerPanels();
             saveState();
+        }
+        
+        // ============================================================
+        //  REORDER STATE (folders and samples)
+        // ============================================================
+        
+        const FOLDER_ORDER_KEY = 'webtronomFolderOrder';
+        const SAMPLE_ORDER_KEY = 'webtronomSampleOrder';
+        
+        let folderOrder = [];      // array of folder names
+        let sampleOrder = {};      // { folderName: [sampleId, ...] }
+        
+        function loadOrderState() {
+            try {
+                const rawFolders = localStorage.getItem(FOLDER_ORDER_KEY);
+                if (rawFolders) {
+                    const parsed = JSON.parse(rawFolders);
+                    if (Array.isArray(parsed)) {
+                        folderOrder = parsed.filter(n => typeof n === 'string');
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load folder order:', e);
+                folderOrder = [];
+            }
+        
+            try {
+                const rawSamples = localStorage.getItem(SAMPLE_ORDER_KEY);
+                if (rawSamples) {
+                    const parsed = JSON.parse(rawSamples);
+                    if (parsed && typeof parsed === 'object') {
+                        sampleOrder = parsed;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load sample order:', e);
+                sampleOrder = {};
+            }
+        }
+        
+        function saveOrderState() {
+            try {
+                localStorage.setItem(FOLDER_ORDER_KEY, JSON.stringify(folderOrder));
+            } catch (e) {
+                console.warn('Could not save folder order:', e);
+            }
+            try {
+                localStorage.setItem(SAMPLE_ORDER_KEY, JSON.stringify(sampleOrder));
+            } catch (e) {
+                console.warn('Could not save sample order:', e);
+            }
+        }
+        
+        // Given a "canonical" list (the default ordering) and a stored order,
+        // return the stored entries that still exist, followed by any canonical
+        // entries not in the stored order.
+        function reconcileOrder(canonical, stored) {
+            const canonicalSet = new Set(canonical);
+            const result = [];
+        
+            for (const item of stored) {
+                if (canonicalSet.has(item) && !result.includes(item)) {
+                    result.push(item);
+                }
+            }
+            for (const item of canonical) {
+                if (!result.includes(item)) {
+                    result.push(item);
+                }
+            }
+            return result;
+        }
+        
+        // The canonical (default) folder order, before applying any user reordering.
+        function getCanonicalFolderOrder() {
+            return getAllFolderNames();
+        }
+        
+        // The reconciled folder order (respects user reordering).
+        function getReconciledFolderOrder() {
+            return reconcileOrder(getCanonicalFolderOrder(), folderOrder);
+        }
+        
+        // The canonical (default) sample order within a folder, from the current
+        // sorted sampleLibrary.
+        function getCanonicalSampleOrder(folderName) {
+            sortSampleLibrary();
+            return sampleLibrary
+                .filter(s => getSampleFolder(s) === folderName)
+                .map(s => s.id);
+        }
+        
+        // The reconciled sample order within a folder.
+        function getReconciledSampleOrder(folderName) {
+            const stored = sampleOrder[folderName] || [];
+            return reconcileOrder(getCanonicalSampleOrder(folderName), stored);
+        }
+        
+        // ============================================================
+        //  REORDER FUNCTIONS
+        // ============================================================
+        
+        function moveFolderUp(folderName) {
+            const order = getReconciledFolderOrder();
+            const idx = order.indexOf(folderName);
+            if (idx <= 0) return;
+            [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
+            folderOrder = order;
+            saveOrderState();
+            renderSampleManager();
+            refreshSamplePickerPanels();
+        }
+        
+        function moveFolderDown(folderName) {
+            const order = getReconciledFolderOrder();
+            const idx = order.indexOf(folderName);
+            if (idx === -1 || idx >= order.length - 1) return;
+            [order[idx + 1], order[idx]] = [order[idx], order[idx + 1]];
+            folderOrder = order;
+            saveOrderState();
+            renderSampleManager();
+            refreshSamplePickerPanels();
+        }
+        
+        function moveSampleUp(folderName, sampleId) {
+            const order = getReconciledSampleOrder(folderName);
+            const idx = order.indexOf(sampleId);
+            if (idx <= 0) return;
+            [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
+            sampleOrder[folderName] = order;
+            saveOrderState();
+            renderSampleManager();
+            refreshSamplePickerPanels();
+        }
+        
+        function moveSampleDown(folderName, sampleId) {
+            const order = getReconciledSampleOrder(folderName);
+            const idx = order.indexOf(sampleId);
+            if (idx === -1 || idx >= order.length - 1) return;
+            [order[idx + 1], order[idx]] = [order[idx], order[idx + 1]];
+            sampleOrder[folderName] = order;
+            saveOrderState();
+            renderSampleManager();
+            refreshSamplePickerPanels();
+        }
+        
+        // ============================================================
+        //  FOLDER OPERATIONS
+        // ============================================================
+        
+        function createFolder(name) {
+            const trimmed = (name || '').trim();
+            if (!trimmed) return false;
+        
+            const all = getAllFolderNames();
+            if (all.includes(trimmed)) {
+                alert('A folder with that name already exists.');
+                return false;
+            }
+        
+            userFolderNames.push(trimmed);
+            saveUserFolderNames();
+            renderSampleManager();
+            refreshSamplePickerPanels();
+            return true;
+        }
+        
+        function renameFolder(oldName, newName) {
+            const trimmed = (newName || '').trim();
+            if (!trimmed || trimmed === oldName) return false;
+        
+            const all = getAllFolderNames();
+            if (all.includes(trimmed)) {
+                alert('A folder with that name already exists.');
+                return false;
+            }
+            
+            if (isBuiltinFolder(oldName)) {
+                alert('Built-in folders cannot be renamed. Edit samples.json instead.');
+                return false;
+            }
+        
+            // Rename in samples
+            let changed = false;
+            for (const sample of sampleLibrary) {
+                if (getSampleFolder(sample) === oldName) {
+                    sample.folder = trimmed;
+                    changed = true;
+                    // Persist to IndexedDB if it's not a built-in
+                    if (!sample.builtin) {
+                        saveSampleToDB(sample).catch(e =>
+                            console.warn('Could not persist folder rename:', e));
+                    }
+                }
+            }
+        
+            // Rename in the explicit user folder list
+            const idx = userFolderNames.indexOf(oldName);
+            if (idx !== -1) {
+                userFolderNames[idx] = trimmed;
+                saveUserFolderNames();
+            }
+            // Migrate folder order
+            const foIdx = folderOrder.indexOf(oldName);
+            if (foIdx !== -1) folderOrder[foIdx] = trimmed;
+            
+            // Migrate sample order
+            if (sampleOrder[oldName]) {
+                sampleOrder[trimmed] = sampleOrder[oldName];
+                delete sampleOrder[oldName];
+            }
+            saveOrderState();
+        
+            // Migrate collapse state
+            if (isFolderExpanded(oldName)) {
+                setFolderExpanded(trimmed, true);
+            }
+            const state = loadFolderState();
+            if (oldName in state) {
+                delete state[oldName];
+                saveFolderState(state);
+            }
+        
+            if (changed || idx !== -1) {
+                renderSampleManager();
+                refreshSamplePickerPanels();
+                return true;
+            }
+            return false;
+        }
+        
+        function deleteFolder(name) {
+            if (name === DEFAULT_USER_FOLDER) {
+                alert('Cannot delete the "User Samples" folder.');
+                return;
+            }
+            
+            if (isBuiltinFolder(name)) {
+                alert('Built-in folders cannot be deleted. Edit samples.json instead.');
+                return;
+            }
+        
+            // Count samples in this folder
+            const affected = sampleLibrary.filter(s => getSampleFolder(s) === name);
+            let reassign = false;
+        
+            if (affected.length > 0) {
+                if (!confirm(
+                    'Folder "' + name + '" contains ' + affected.length +
+                    ' sample' + (affected.length === 1 ? '' : 's') +
+                    '. Move them to "' + DEFAULT_USER_FOLDER + '" and delete the folder?'
+                )) {
+                    return;
+                }
+                reassign = true;
+            }
+        
+            if (reassign) {
+                for (const sample of affected) {
+                    sample.folder = DEFAULT_USER_FOLDER;
+                    if (!sample.builtin) {
+                        saveSampleToDB(sample).catch(e =>
+                            console.warn('Could not persist folder reassignment:', e));
+                    }
+                }
+            }
+        
+            // Remove from explicit user folder list
+            const idx = userFolderNames.indexOf(name);
+            if (idx !== -1) {
+                userFolderNames.splice(idx, 1);
+                saveUserFolderNames();
+            }
+            
+            // Prune from folder order
+            folderOrder = folderOrder.filter(n => n !== name);
+            // Prune from sample order for this folder
+            delete sampleOrder[name];
+            saveOrderState();
+        
+            // Clear collapse state
+            const state = loadFolderState();
+            if (name in state) {
+                delete state[name];
+                saveFolderState(state);
+            }
+        
+            renderSampleManager();
+            refreshSamplePickerPanels();
+        }
+        
+        function moveSampleToFolder(sampleId, folderName) {
+            const sample = sampleLibrary.find(s => s.id === sampleId);
+            if (!sample) return;
+        
+            const current = getSampleFolder(sample);
+            if (current === folderName) return;
+        
+            sample.folder = folderName;
+        
+            if (!sample.builtin) {
+                saveSampleToDB(sample).catch(e =>
+                    console.warn('Could not persist sample move:', e));
+            }
+        
+            renderSampleManager();
+            refreshSamplePickerPanels();
         }
 
         // ============================================================
@@ -1939,66 +2597,573 @@
         function renderSampleManager() {
             const list = document.getElementById('sampleManagerList');
             if (!list) return;
-
-            if (sampleLibrary.length === 0) {
+        
+            if (sampleLibrary.length === 0 && userFolderNames.length === 0) {
                 list.innerHTML = '<div class="sample-manager-empty">No samples loaded yet. Upload a WAV, MP3, or other audio file.</div>';
                 return;
             }
-
-            let html = '';
-            for (const sample of sampleLibrary) {
-                const durationStr = sample.duration.toFixed(2) + 's';
-                const builtinBadge = sample.builtin ? '<span class="builtin-badge">built-in</span>' : '';
-                const deleteBtn = sample.builtin ? '' : `<button class="sample-btn delete-btn" data-id="${sample.id}">×</button>`;
-
-                html += `
-                    <div class="sample-item" data-id="${sample.id}">
-                        <span class="name">${sample.name} ${builtinBadge}</span>
-                        <span class="duration">${durationStr}</span>
-                        <button class="sample-btn play-btn" data-id="${sample.id}">▶</button>
-                        ${deleteBtn}
-                    </div>
-                `;
+        
+            sortSampleLibrary();
+            list.innerHTML = '';
+        
+            const allFolders = getReconciledFolderOrder();
+            const allFolderChoices = allFolders.slice();
+        
+            for (let fi = 0; fi < allFolders.length; fi++) {
+                const folderName = allFolders[fi];
+                const isFirst = fi === 0;
+                const isLast = fi === allFolders.length - 1;
+        
+                const samplesInFolder = sampleLibrary.filter(
+                    s => getSampleFolder(s) === folderName
+                );
+        
+                // Apply reconciled sample order within this folder
+                const orderedIds = getReconciledSampleOrder(folderName);
+                const idToSample = new Map(samplesInFolder.map(s => [s.id, s]));
+                const orderedSamples = [];
+                for (const id of orderedIds) {
+                    if (idToSample.has(id)) {
+                        orderedSamples.push(idToSample.get(id));
+                        idToSample.delete(id);
+                    }
+                }
+                for (const s of idToSample.values()) orderedSamples.push(s);
+        
+                const folderEl = document.createElement('div');
+                folderEl.className = 'sm-folder';
+                folderEl.dataset.folder = folderName;
+        
+                const expanded = isFolderExpanded(folderName);
+                if (expanded) folderEl.classList.add('expanded');
+        
+                // ---- Header ----
+                const folderIsBuiltin = isBuiltinFolder(folderName);
+                const folderIsProtected = folderIsBuiltin || folderName === DEFAULT_USER_FOLDER;
+        
+                const header = document.createElement('div');
+                header.className = 'sm-folder-header';
+        
+                const caret = document.createElement('span');
+                caret.className = 'sm-folder-caret';
+                caret.textContent = '▸';
+        
+                const nameEl = document.createElement('span');
+                nameEl.className = 'sm-folder-name';
+                nameEl.textContent = folderName;
+        
+                const countEl = document.createElement('span');
+                countEl.className = 'sm-folder-count';
+                countEl.textContent = samplesInFolder.length;
+        
+                const upBtn = document.createElement('button');
+                upBtn.className = 'sm-reorder-btn';
+                upBtn.textContent = '↑';
+                upBtn.title = 'Move folder up';
+                upBtn.disabled = isFirst;
+        
+                const downBtn = document.createElement('button');
+                downBtn.className = 'sm-reorder-btn';
+                downBtn.textContent = '↓';
+                downBtn.title = 'Move folder down';
+                downBtn.disabled = isLast;
+        
+                const renameBtn = document.createElement('button');
+                renameBtn.className = 'sm-folder-action rename';
+                renameBtn.textContent = '✎';
+                renameBtn.title = folderIsBuiltin
+                    ? 'Built-in folders are defined in samples.json and cannot be renamed here'
+                    : 'Rename folder';
+                if (folderIsBuiltin) {
+                    renameBtn.disabled = true;
+                    renameBtn.style.opacity = '0.25';
+                    renameBtn.style.cursor = 'default';
+                }
+        
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'sm-folder-action danger';
+                deleteBtn.textContent = '×';
+                deleteBtn.title = folderIsBuiltin
+                    ? 'Built-in folders are defined in samples.json and cannot be deleted here'
+                    : 'Delete folder';
+                if (folderIsProtected) {
+                    deleteBtn.disabled = true;
+                    deleteBtn.style.opacity = '0.25';
+                    deleteBtn.style.cursor = 'default';
+                }
+        
+                header.appendChild(caret);
+                header.appendChild(nameEl);
+                header.appendChild(countEl);
+                header.appendChild(upBtn);
+                header.appendChild(downBtn);
+                header.appendChild(renameBtn);
+                header.appendChild(deleteBtn);
+        
+                header.addEventListener('click', () => {
+                    const isNowExpanded = folderEl.classList.toggle('expanded');
+                    setFolderExpanded(folderName, isNowExpanded);
+                });
+        
+                upBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    moveFolderUp(folderName);
+                });
+                downBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    moveFolderDown(folderName);
+                });
+                renameBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    beginFolderRename(folderEl, folderName);
+                });
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteFolder(folderName);
+                });
+        
+                // ---- Children ----
+                const children = document.createElement('div');
+                children.className = 'sm-folder-children';
+        
+                if (orderedSamples.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'sample-manager-empty';
+                    empty.style.padding = '0.4rem 0';
+                    empty.textContent = 'Empty folder';
+                    children.appendChild(empty);
+                } else {
+                    for (let si = 0; si < orderedSamples.length; si++) {
+                        const sample = orderedSamples[si];
+                        const isFirstSample = si === 0;
+                        const isLastSample = si === orderedSamples.length - 1;
+                        children.appendChild(buildSampleRow(
+                            sample,
+                            allFolderChoices,
+                            folderName,
+                            isFirstSample,
+                            isLastSample
+                        ));
+                    }
+                }
+        
+                folderEl.appendChild(header);
+                folderEl.appendChild(children);
+                list.appendChild(folderEl);
             }
-            list.innerHTML = html;
-
-            list.querySelectorAll('.play-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const id = btn.dataset.id;
-                    playSamplePreview(id);
-                });
-            });
-
-            list.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const id = btn.dataset.id;
-                    deleteSample(id);
-                });
-            });
         }
-
-        function updateSampleDropdowns() {
-            const select = document.getElementById('beatEditorSampleSelect');
-            if (!select) return;
-
-            const currentValue = select.value;
-
-            select.innerHTML = '';
+        
+        // Builds a single sample row (with folder select, play, delete).
+        function buildSampleRow(sample, allFolderChoices, folderName, isFirstSample, isLastSample) {
+            const row = document.createElement('div');
+            row.className = 'sample-item';
+            row.dataset.id = sample.id;
+        
+            const name = document.createElement('span');
+            name.className = 'name';
+            name.textContent = sample.name;
+            if (sample.builtin) {
+                const badge = document.createElement('span');
+                badge.className = 'builtin-badge';
+                badge.textContent = 'built-in';
+                name.appendChild(document.createTextNode(' '));
+                name.appendChild(badge);
+            }
+        
+            const duration = document.createElement('span');
+            duration.className = 'duration';
+            duration.textContent = sample.duration.toFixed(2) + 's';
+        
+            const folderSelect = document.createElement('select');
+            folderSelect.className = 'sample-folder-select';
+            folderSelect.title = sample.builtin
+                ? 'Built-in sample folder comes from samples.json'
+                : 'Move to folder';
+            for (const choice of allFolderChoices) {
+                const opt = document.createElement('option');
+                opt.value = choice;
+                opt.textContent = choice;
+                if (choice === getSampleFolder(sample)) opt.selected = true;
+                folderSelect.appendChild(opt);
+            }
+            if (sample.builtin) {
+                folderSelect.disabled = true;
+                folderSelect.style.opacity = '0.4';
+                folderSelect.style.cursor = 'default';
+            } else {
+                folderSelect.addEventListener('change', () => {
+                    moveSampleToFolder(sample.id, folderSelect.value);
+                });
+            }
+        
+            const upBtn = document.createElement('button');
+            upBtn.className = 'sm-reorder-btn';
+            upBtn.textContent = '↑';
+            upBtn.title = 'Move sample up';
+            upBtn.disabled = isFirstSample;
+        
+            const downBtn = document.createElement('button');
+            downBtn.className = 'sm-reorder-btn';
+            downBtn.textContent = '↓';
+            downBtn.title = 'Move sample down';
+            downBtn.disabled = isLastSample;
+        
+            const playBtn = document.createElement('button');
+            playBtn.className = 'sample-btn play-btn';
+            playBtn.textContent = '▶';
+            playBtn.addEventListener('click', () => playSamplePreview(sample.id));
+        
+            row.appendChild(name);
+            row.appendChild(duration);
+            row.appendChild(folderSelect);
+            row.appendChild(upBtn);
+            row.appendChild(downBtn);
+            row.appendChild(playBtn);
+        
+            if (!sample.builtin) {
+                const delBtn = document.createElement('button');
+                delBtn.className = 'sample-btn delete-btn';
+                delBtn.textContent = '×';
+                delBtn.addEventListener('click', () => deleteSample(sample.id));
+                row.appendChild(delBtn);
+            }
+        
+            upBtn.addEventListener('click', () => moveSampleUp(folderName, sample.id));
+            downBtn.addEventListener('click', () => moveSampleDown(folderName, sample.id));
+        
+            return row;
+        }
+        
+        // Inline rename of a folder header. Replaces the name span with an input
+        // until Enter or blur, then commits or cancels.
+        function beginFolderRename(folderEl, oldName) {
+            const nameEl = folderEl.querySelector('.sm-folder-name');
+            if (!nameEl || nameEl.tagName === 'INPUT') return;
+        
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'sm-folder-name-input';
+            input.value = oldName;
+        
+            let committed = false;
+        
+            const commit = () => {
+                if (committed) return;
+                committed = true;
+                const newName = input.value.trim();
+                if (newName && newName !== oldName) {
+                    renameFolder(oldName, newName);
+                } else {
+                    // Cancel — re-render to restore the original span
+                    renderSampleManager();
+                }
+            };
+        
+            const cancel = () => {
+                if (committed) return;
+                committed = true;
+                renderSampleManager();
+            };
+        
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    commit();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancel();
+                }
+            });
+            input.addEventListener('blur', commit);
+        
+            nameEl.replaceWith(input);
+            input.focus();
+            input.select();
+        }
+        
+        function getNinCounter() {
+            return songModeEnabled ? songLoopCount : barsSinceAction;
+        }
+        
+        function resetNinCounter() {
+            if (songModeEnabled) {
+                songLoopCount = 1;   // loops are 1-indexed in song mode
+            } else {
+                barsSinceAction = 0;
+            }
+        }
+        
+        // ============================================================
+        //  SAMPLE PICKER COMPONENT
+        // ============================================================
+        
+        // Each picker instance keeps its own state so the two pickers
+        // (beat editor and populate modal) don't interfere with each other.
+        const samplePickerInstances = {};
+        
+        function createSamplePickerInstance(pickerId, onChange) {
+            const root = document.getElementById(pickerId);
+            if (!root) return null;
+        
+            const trigger = root.querySelector('.sample-picker-trigger');
+            const panel = root.querySelector('.sample-picker-panel');
+            const label = root.querySelector('.sample-picker-label');
+        
+            const instance = {
+                root,
+                trigger,
+                panel,
+                label,
+                selectedId: null,
+                isOpen: false,
+                onChange,
+                // Bound handlers kept so we can remove them on rebuild if needed
+                handleTriggerClick: null,
+                handlePanelClick: null,
+                handleOutsideClick: null,
+                handleKeyDown: null
+            };
+        
+            instance.handleTriggerClick = (e) => {
+                e.stopPropagation();
+                toggleSamplePicker(pickerId);
+            };
+        
+            instance.handlePanelClick = (e) => {
+                // Folder header toggle
+                const header = e.target.closest('.sample-folder-header');
+                if (header) {
+                    e.stopPropagation();
+                    const folderEl = header.closest('.sample-folder');
+                    const folderName = folderEl.dataset.folder;
+                    const isExpanded = folderEl.classList.contains('expanded');
+                    setFolderExpanded(folderName, !isExpanded);
+                    folderEl.classList.toggle('expanded', !isExpanded);
+                    return;
+                }
+        
+                // Sample item select
+                const item = e.target.closest('.sample-item-btn');
+                if (item) {
+                    e.stopPropagation();
+                    selectSamplePickerItem(pickerId, item.dataset.sampleId);
+                    return;
+                }
+        
+                // Click elsewhere inside the panel — swallow so it doesn't close
+                e.stopPropagation();
+            };
+        
+            instance.handleOutsideClick = (e) => {
+                if (!instance.isOpen) return;
+                if (root.contains(e.target)) return;
+                closeSamplePicker(pickerId);
+            };
+        
+            instance.handleKeyDown = (e) => {
+                if (e.key === 'Escape' && instance.isOpen) {
+                    e.stopPropagation();
+                    closeSamplePicker(pickerId);
+                    trigger.focus();
+                }
+            };
+        
+            trigger.addEventListener('click', instance.handleTriggerClick);
+            panel.addEventListener('click', instance.handlePanelClick);
+            document.addEventListener('click', instance.handleOutsideClick);
+            document.addEventListener('keydown', instance.handleKeyDown, true);
+        
+            samplePickerInstances[pickerId] = instance;
+            return instance;
+        }
+        
+        function buildSamplePickerPanel(pickerId) {
+            const inst = samplePickerInstances[pickerId];
+            if (!inst) return;
+        
+            const panel = inst.panel;
+            panel.innerHTML = '';
+        
             if (sampleLibrary.length === 0) {
-                select.innerHTML = '<option value="">-- No samples --</option>';
+                const empty = document.createElement('div');
+                empty.className = 'sample-picker-empty';
+                empty.textContent = 'No samples loaded yet.';
+                panel.appendChild(empty);
                 return;
             }
-
-            for (const sample of sampleLibrary) {
-                const option = document.createElement('option');
-                option.value = sample.id;
-                option.textContent = sample.name + ' (' + sample.duration.toFixed(2) + 's)';
-                select.appendChild(option);
+        
+            const groups = getGroupedSamples();
+        
+            for (const group of groups) {
+                const folderEl = document.createElement('div');
+                folderEl.className = 'sample-folder';
+                folderEl.dataset.folder = group.name;
+        
+                if (isFolderExpanded(group.name)) {
+                    folderEl.classList.add('expanded');
+                }
+        
+                const header = document.createElement('button');
+                header.type = 'button';
+                header.className = 'sample-folder-header';
+        
+                const caret = document.createElement('span');
+                caret.className = 'sample-folder-caret';
+                caret.textContent = '▸';
+        
+                const nameEl = document.createElement('span');
+                nameEl.className = 'sample-folder-name';
+                nameEl.textContent = group.name;
+        
+                const countEl = document.createElement('span');
+                countEl.className = 'sample-folder-count';
+                countEl.textContent = group.samples.length;
+        
+                header.appendChild(caret);
+                header.appendChild(nameEl);
+                header.appendChild(countEl);
+                folderEl.appendChild(header);
+        
+                const children = document.createElement('div');
+                children.className = 'sample-folder-children';
+        
+                for (const sample of group.samples) {
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'sample-item-btn';
+                    item.dataset.sampleId = sample.id;
+                    if (sample.id === inst.selectedId) item.classList.add('selected');
+        
+                    const itemName = document.createElement('span');
+                    itemName.className = 'sample-item-name';
+                    itemName.textContent = sample.name;
+        
+                    const itemDur = document.createElement('span');
+                    itemDur.className = 'sample-item-duration';
+                    itemDur.textContent = sample.duration.toFixed(2) + 's';
+        
+                    item.appendChild(itemName);
+                    item.appendChild(itemDur);
+                    children.appendChild(item);
+                }
+        
+                folderEl.appendChild(children);
+                panel.appendChild(folderEl);
             }
-
-            if (currentValue && sampleLibrary.some(s => s.id === currentValue)) {
-                select.value = currentValue;
+        }
+        
+        function updateSamplePickerLabel(pickerId) {
+            const inst = samplePickerInstances[pickerId];
+            if (!inst) return;
+        
+            const id = inst.selectedId;
+            if (!id) {
+                inst.label.textContent = '-- No samples --';
+                inst.label.classList.add('empty');
+                return;
             }
+        
+            const sample = sampleLibrary.find(s => s.id === id);
+            if (!sample) {
+                inst.label.textContent = '-- No samples --';
+                inst.label.classList.add('empty');
+                return;
+            }
+        
+            const folder = getSampleFolder(sample);
+            inst.label.textContent =
+                folder + ' / ' + sample.name + ' · ' + sample.duration.toFixed(2) + 's';
+            inst.label.classList.remove('empty');
+        }
+        
+        function openSamplePicker(pickerId) {
+            // Close any other open picker first
+            for (const otherId of Object.keys(samplePickerInstances)) {
+                if (otherId !== pickerId) closeSamplePicker(otherId);
+            }
+        
+            const inst = samplePickerInstances[pickerId];
+            if (!inst || inst.isOpen) return;
+        
+            buildSamplePickerPanel(pickerId);
+            inst.root.classList.add('open');
+            inst.isOpen = true;
+        
+            // Decide open direction based on available space
+            const panel = inst.panel;
+            const triggerRect = inst.trigger.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - triggerRect.bottom;
+            const spaceAbove = triggerRect.top;
+            const panelHeight = Math.min(panel.scrollHeight, 260);
+        
+            if (spaceBelow < panelHeight + 20 && spaceAbove > spaceBelow) {
+                panel.classList.add('drop-up');
+            } else {
+                panel.classList.remove('drop-up');
+            }
+        }
+        
+        function closeSamplePicker(pickerId) {
+            const inst = samplePickerInstances[pickerId];
+            if (!inst || !inst.isOpen) return;
+            inst.root.classList.remove('open');
+            inst.isOpen = false;
+        }
+        
+        function toggleSamplePicker(pickerId) {
+            const inst = samplePickerInstances[pickerId];
+            if (!inst) return;
+            if (inst.isOpen) closeSamplePicker(pickerId);
+            else openSamplePicker(pickerId);
+        }
+        
+        function selectSamplePickerItem(pickerId, sampleId) {
+            const inst = samplePickerInstances[pickerId];
+            if (!inst) return;
+        
+            inst.selectedId = sampleId || null;
+            updateSamplePickerLabel(pickerId);
+            closeSamplePicker(pickerId);
+        
+            if (typeof inst.onChange === 'function') {
+                inst.onChange(inst.selectedId);
+            }
+        }
+        
+        function setSamplePickerSelection(pickerId, sampleId) {
+            const inst = samplePickerInstances[pickerId];
+            if (!inst) return;
+            inst.selectedId = sampleId || null;
+            updateSamplePickerLabel(pickerId);
+        }
+        
+        function getSamplePickerSelection(pickerId) {
+            const inst = samplePickerInstances[pickerId];
+            return inst ? inst.selectedId : null;
+        }
+        
+        function refreshSamplePickerPanels() {
+            // If any picker is currently open, rebuild its panel so it reflects
+            // changes to the sample library.
+            for (const id of Object.keys(samplePickerInstances)) {
+                const inst = samplePickerInstances[id];
+                if (inst.isOpen) buildSamplePickerPanel(id);
+                // Also refresh the label in case the selected sample was renamed/removed
+                updateSamplePickerLabel(id);
+            }
+        }
+        
+        function initSamplePickers() {
+            // Beat editor picker
+            createSamplePickerInstance('beatEditorSamplePicker', (sampleId) => {
+                beatEditorTempSettings.sampleId = sampleId || null;
+                commitBeatEditorTempToLive();
+            });
+        
+            // Populate modal picker — does not live-commit; it's read on Apply
+            createSamplePickerInstance('populateSamplePicker', () => {
+                // Nothing to do here; applyPopulateForm reads the value later
+            });
         }
 
         // ============================================================
@@ -2058,11 +3223,7 @@
             const waveformSelect = document.getElementById('beatEditorWaveform');
             if (waveformSelect) waveformSelect.value = beatEditorTempSettings.waveform;
 
-            updateSampleDropdowns();
-            const sampleSelect = document.getElementById('beatEditorSampleSelect');
-            if (sampleSelect && beatEditorTempSettings.sampleId) {
-                sampleSelect.value = beatEditorTempSettings.sampleId;
-            }
+            setSamplePickerSelection('beatEditorSamplePicker', beatEditorTempSettings.sampleId);
 
             const volSlider = document.getElementById('beatEditorVolSlider');
             const volDisplay = document.getElementById('beatEditorVolDisplay');
@@ -2094,12 +3255,23 @@
             const probDisplay = document.getElementById('beatEditorProbDisplay');
             if (probSlider) probSlider.value = Math.round(beatEditorTempSettings.probability * 100);
             if (probDisplay) probDisplay.textContent = Math.round(beatEditorTempSettings.probability * 100) + '%';
+            
+            const disableRemaining = (beatIndex >= 32) || songModeEnabled;
+            ['beatEditorCopySoundRemaining',
+             'beatEditorCopyVolumeRemaining',
+             'beatEditorCopyAccentRemaining',
+             'beatEditorCopyProbabilityRemaining',
+             'beatEditorCopyBeatRemaining'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = disableRemaining;
+            });
 
             const modal = document.getElementById('beatEditorModal');
             if (modal) modal.classList.add('show');
         }
 
         function closeBeatEditor() {
+            closeSamplePicker('beatEditorSamplePicker');
             const modal = document.getElementById('beatEditorModal');
             if (modal) modal.classList.remove('show');
             beatEditorOriginalSettings = null;
@@ -2478,21 +3650,51 @@
             }
         }
         
-        function copyBeatToRemaining(beatIndex) {
+        function computeFieldResult(beatIndex, sourceSettings, fieldMask) {
+            const current = getBeatSettings(beatIndex);
+            const next = JSON.parse(JSON.stringify(current));
+        
+            if (fieldMask.sound) {
+                next.source = sourceSettings.source;
+                next.frequency = sourceSettings.frequency;
+                next.waveform = sourceSettings.waveform;
+                next.sampleId = sourceSettings.sampleId;
+        
+                if (next.source === 'sample' && next.sampleId) {
+                    const exists = sampleLibrary.some(s => s.id === next.sampleId);
+                    if (!exists) {
+                        next.source = 'oscillator';
+                        next.sampleId = null;
+                    }
+                }
+            }
+            if (fieldMask.volume) {
+                next.volume = sourceSettings.volume;
+            }
+            if (fieldMask.accent) {
+                next.accentLevel = sourceSettings.accentLevel;
+            }
+            if (fieldMask.probability) {
+                next.probability = sourceSettings.probability;
+            }
+        
+            if (JSON.stringify(current) === JSON.stringify(next)) return null;
+            return next;
+        }
+        
+        function applyFieldsToRemaining(beatIndex, sourceSettings, fieldMask) {
             if (beatIndex >= 32) return;
-            if (!clipboardBeat) return;
-
-            // Compute the result for every beat to the right
+        
             const results = {};
             let willChange = false;
             for (let i = beatIndex + 1; i <= 32; i++) {
-                const next = computeClipboardResult(i);
+                const next = computeFieldResult(i, sourceSettings, fieldMask);
                 if (next !== null) {
                     results[i] = next;
                     willChange = true;
                 }
             }
-
+        
             if (willChange) {
                 pushUndoSnapshot();
                 for (const idxStr of Object.keys(results)) {
@@ -2502,15 +3704,20 @@
                 saveBeatSettings();
                 saveStateOnly();
             }
-
+        
             renderGrid();
-
+        
             for (let i = beatIndex + 1; i <= 32; i++) {
                 flashBeatCell(i);
             }
         }
         
-                // Applies the clipboard to a single beat, respecting clipboardFields.
+        function copyBeatToRemaining(beatIndex) {
+            if (!clipboardBeat) return;
+            applyFieldsToRemaining(beatIndex, clipboardBeat, clipboardFields);
+        }
+        
+        // Applies the clipboard to a single beat, respecting clipboardFields.
         // Returns true if anything changed, false otherwise.
         function applyClipboardTo(beatIndex) {
             if (!clipboardBeat) return false;
@@ -2619,6 +3826,22 @@
             if (!cell) return;
             cell.classList.add('paste-flash');
             setTimeout(() => cell.classList.remove('paste-flash'), 300);
+        }
+        
+        function flashSongStrip() {
+            const strip = document.getElementById('songStrip');
+            if (!strip) return;
+        
+            // Defer until after the current scheduler tick finishes mutating the DOM,
+            // and force a reflow so the animation restarts even if it's already mid-flight.
+            requestAnimationFrame(() => {
+                strip.classList.remove('song-loop-flash');
+                // Reading offsetWidth flushes pending style/layout — required for
+                // the animation to restart when the class is re-added.
+                void strip.offsetWidth;
+                strip.classList.add('song-loop-flash');
+                setTimeout(() => strip.classList.remove('song-loop-flash'), 400);
+            });
         }
 
         // ============================================================
@@ -2856,12 +4079,6 @@
             ninInput.value = ninValue.toString();
             volumeSlider.value = Math.round(currentVolume * 100);
 
-            if (accentEnabled) {
-                btnAcc.classList.add('active');
-            } else {
-                btnAcc.classList.remove('active');
-            }
-
             stopRadio.classList.remove('active');
             plusBPMRadio.classList.remove('active');
             minusBPMRadio.classList.remove('active');
@@ -2871,7 +4088,7 @@
 
             const clamped = clampTempo(displayedBPM);
             if (clamped !== displayedBPM) {
-                setDisplayedTempo(clamped, true);
+                setDisplayedTempo(clamped);
             }
 
             updateBeatGrid(0);
@@ -2921,13 +4138,14 @@
         function setGridMode(mode) {
             gridMode = mode;
             const btn = document.getElementById('presetManagerBtn');
+            const label = document.getElementById('presetManagerLabel');
             const grid = document.getElementById('beatGrid');
             if (btn) {
                 if (mode === 'beatgrid') {
-                    btn.textContent = 'Beat Grid';
+                    if (label) label.textContent = 'Beat Grid';
                     btn.classList.remove('active-mode');
                 } else {
-                    btn.textContent = 'Presets';
+                    if (label) label.textContent = 'Presets';
                     btn.classList.add('active-mode');
                 }
             }
@@ -3632,7 +4850,7 @@
         const btnPlus1 = document.getElementById('btnPlus1');
         const btnMinus01 = document.getElementById('btnMinus01');
         const btnPlus01 = document.getElementById('btnPlus01');
-        const btnAcc = document.getElementById('btnAcc');
+        const btnRound = document.getElementById('btnRound');
 
         const randomPlusBtn = document.getElementById('randomPlusBtn');
         const randomMinusBtn = document.getElementById('randomMinusBtn');
@@ -3827,6 +5045,12 @@
         function openNumpad(target, initialValue) {
             numpadTarget = target;
             numpadIsNewInput = true;
+            // Prevent the previously-focused element (often Start, or the display
+            // button that opened this modal) from receiving a stray Enter when the
+            // user confirms.
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
 
             if (target === 'nin' || target === 'rangeMin' || target === 'rangeMax'
                 || target === 'copyFrom' || target === 'copyTo' || target === 'copyEvery' || target === 'songBars' || target === 'songDenom') {
@@ -3861,7 +5085,7 @@
             switch (numpadTarget) {
                 case 'bpm':
                     if (value >= 20 && value <= 500) {
-                        setDisplayedTempo(value, true);
+                        setDisplayedTempo(value);
                     }
                     break;
                 case 'rmx':
@@ -4136,11 +5360,11 @@
                     const percent = min / 100;
                     const change = displayedBPM * percent;
                     const newTempo = direction === 1 ? displayedBPM + change : displayedBPM - change;
-                    setDisplayedTempo(clampTempo(newTempo), false);
+                    setDisplayedTempo(clampTempo(newTempo));
                 } else {
                     const change = min;
                     const newTempo = direction === 1 ? displayedBPM + change : displayedBPM - change;
-                    setDisplayedTempo(clampTempo(newTempo), false);
+                    setDisplayedTempo(clampTempo(newTempo));
                 }
             } else {
                 const randomValue = getRandomArbitrary(min, max);
@@ -4148,11 +5372,11 @@
                     const percent = randomValue / 100;
                     const change = displayedBPM * percent;
                     const newTempo = direction === 1 ? displayedBPM + change : displayedBPM - change;
-                    setDisplayedTempo(clampTempo(newTempo), false);
+                    setDisplayedTempo(clampTempo(newTempo));
                 } else {
                     const change = randomValue;
                     const newTempo = direction === 1 ? displayedBPM + change : displayedBPM - change;
-                    setDisplayedTempo(clampTempo(newTempo), false);
+                    setDisplayedTempo(clampTempo(newTempo));
                 }
             }
         }
@@ -4165,26 +5389,38 @@
             if (autoMode === 'off') return;
             if (pendingAction) return;
             if (ninValue < 1) return;
-
+        
+            const isLoopMode = songModeEnabled;
+        
+            let counter;
             let triggerCount;
-            if (autoMode === 'stop') {
+        
+            if (isLoopMode) {
+                // Internal NIN counter is 1-indexed and resets to 1 after each fire.
+                // "NIN loops" means the counter reaching NIN + 1.
+                counter = songLoopsSinceAction;
                 triggerCount = ninValue + 1;
             } else {
+                counter = barsSinceAction;
                 if (!hasTriggeredOnce) {
                     triggerCount = ninValue + 1;
                 } else {
                     triggerCount = ninValue;
                 }
             }
-
-            if (barsSinceAction >= triggerCount) {
+        
+            if (counter >= triggerCount) {
                 pendingAction = true;
                 hasTriggeredOnce = true;
-
+        
                 if (resetBarCounterAfterAction) {
-                    barsSinceAction = 0;
+                    if (isLoopMode) {
+                        songLoopsSinceAction = 1;   // ← only the NIN counter resets
+                    } else {
+                        barsSinceAction = 0;
+                    }
                 }
-
+        
                 switch (autoMode) {
                     case 'stop':
                         stopMetronome();
@@ -4197,7 +5433,7 @@
                         applyRandomTempo(-1);
                         break;
                 }
-
+        
                 setTimeout(() => {
                     pendingAction = false;
                 }, 50);
@@ -4398,14 +5634,22 @@
                 // the transition on the previous beat.
                 if (pendingSongTransition) {
                     pendingSongTransition = false;
-
-                    currentStepIndex = (currentStepIndex + 1) % songs[activeSongId].steps.length;
+                
+                    const nextIndex = (currentStepIndex + 1) % songs[activeSongId].steps.length;
+                    const justLooped = (nextIndex === 0);
+                    if (justLooped) {
+                        songLoopCount++;
+                        songLoopsSinceAction++;
+                        checkAutoAction();
+                    }
+                    currentStepIndex = nextIndex;
                     barsInStep = 0;
                     stepBeatCount = 0;
                     applySongStep(currentStepIndex);
-                    // applySongStep updates displayedBPM, actualBPM, topNumber,
-                    // bottomNumber, beatSettings, and the display. From here on,
-                    // the bottom-of-loop advance uses the new tempo.
+                
+                    if (justLooped) {
+                        flashSongStrip();
+                    }
                 }
 
                 const currentBeat = (stepBeatCount % topNumber) + 1;
@@ -4427,7 +5671,9 @@
                     barsSinceAction++;
                     measureCount++;
                     barsDisplay.textContent = measureCount;
-                    checkAutoAction();
+                    if (!songModeEnabled) {
+                        checkAutoAction();
+                    }
                     if (songModeEnabled) updateSongStrip();
                 }
 
@@ -4491,6 +5737,8 @@
             beatCount = 0;
             stepBeatCount = 0;
             measureCount = 0;
+            songLoopCount = 1;
+            songLoopsSinceAction = 1;
             barsSinceAction = 0;
             pendingAction = false;
             hasTriggeredOnce = false;
@@ -4531,38 +5779,24 @@
             }
         }
 
-        function setDisplayedTempo(newBPM, restart = true) {
+        function setDisplayedTempo(newBPM) {
             displayedBPM = clampTempo(roundToTempoDecimals(newBPM));
-
+        
             // During song mode, derive the global multiplier from this change.
-            // Every tempo-changing path (numpad, +/- buttons, random, auto modes)
-            // funnels through setDisplayedTempo, so this single hook covers all
-            // of them.
+            // Every tempo-changing path (numpad, +/- buttons, random, auto modes,
+            // tap tempo) funnels through setDisplayedTempo, so this single hook
+            // covers all of them.
             if (songModeEnabled) {
                 deriveSongMultiplierFromEffectiveBPM();
                 updateSongStrip();
-                // Never reset the bar/beat counters during song mode — the song's
-                // own step structure controls the layout, not a tempo change.
-                restart = false;
             }
-
+        
             updateTempoDisplay();
             updateActualTempo();
             saveState();
-
-            if (isPlaying && restart) {
-                clearTimeout(timerID);
-                nextNoteTime = audioCtx.currentTime + 60.0 / actualBPM;
-                beatCount = 0;
-                measureCount = 0;
-                barsSinceAction = 0;
-                pendingAction = false;
-                hasTriggeredOnce = false;
-                barsDisplay.textContent = '0';
-                beatDisplay.textContent = '1';
-                updateBeatGrid(0);
-                scheduler();
-            }
+            // No restart. The scheduler reads actualBPM on its next iteration
+            // (currentInterval = 60.0 / actualBPM), so the change takes effect on
+            // the next scheduled beat without disturbing the current one.
         }
 
         function updateActualTempo() {
@@ -4583,15 +5817,248 @@
                 tempoDecimal.textContent = '.' + parts[1];
             }
         }
+        
+        function formatTimerMs(ms) {
+            if (ms < 0) ms = 0;
+            const totalSec = Math.floor(ms / 1000);
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            const pad = (n) => n < 10 ? '0' + n : '' + n;
+            if (h > 0) {
+                return h + ':' + pad(m) + ':' + pad(s);
+            }
+            return m + ':' + pad(s);
+        }
+        
+        function updateTimerDisplay() {
+            const el = document.getElementById('timerDisplay');
+            if (!el) return;
+        
+            el.classList.remove('countdown', 'stopwatch', 'completed');
+        
+            if (timerMode === 'off') {
+                el.textContent = '';
+                return;
+            }
+        
+            if (timerMode === 'countdown') {
+                el.textContent = formatTimerMs(timerRemainingMs);
+                el.classList.add('countdown');
+                return;
+            }
+        
+            if (timerMode === 'stopwatch' || timerMode === 'stopwatch-paused') {
+                el.textContent = formatTimerMs(timerRemainingMs);
+                el.classList.add('stopwatch');
+                return;
+            }
+        
+            if (timerMode === 'completed') {
+                el.innerHTML =
+                    '<span class="timer-completed-label">Time Completed</span>' +
+                    '<span class="timer-completed-time">' + formatTimerMs(timerCompletedTargetMs) + '</span>';
+                el.classList.add('completed');
+                return;
+            }
+        }
+        
+        function updateStopwatchButtonState() {
+            const btn = document.getElementById('timerStopwatch');
+            if (!btn) return;
+            btn.classList.toggle('active', timerMode === 'stopwatch');
+            btn.classList.toggle('paused', timerMode === 'stopwatch-paused');
+        }
+        
+        function startTimerTick() {
+            if (timerIntervalId !== null) return;
+            timerLastTick = performance.now();
+            timerIntervalId = setInterval(timerTick, TIMER_TICK_MS);
+        }
+        
+        function stopTimerTick() {
+            if (timerIntervalId !== null) {
+                clearInterval(timerIntervalId);
+                timerIntervalId = null;
+            }
+        }
+        
+        function timerTick() {
+            const now = performance.now();
+            const delta = now - timerLastTick;
+            timerLastTick = now;
+        
+            if (timerMode === 'countdown') {
+                timerRemainingMs -= delta;
+                if (timerRemainingMs <= 0) {
+                    timerCompletedTargetMs = timerCompletedTargetMs || 0;
+                    timerRemainingMs = 0;
+                    timerMode = 'completed';
+                    stopTimerTick();
+                }
+                updateTimerDisplay();
+            } else if (timerMode === 'stopwatch') {
+                timerRemainingMs += delta;
+                updateTimerDisplay();
+            } else {
+                stopTimerTick();
+            }
+        }
+        
+        // Sets up the countdown target and starts the tick loop.
+        // Used both for a fresh start and for adding to an existing countdown.
+        function startOrAddCountdown(addMs) {
+            if (timerMode === 'countdown') {
+                // Add to the remaining time, clamped to the max
+                const newRemaining = Math.min(TIMER_MAX_MS, timerRemainingMs + addMs);
+                // Track the total target so the completion message reflects reality
+                timerCompletedTargetMs = Math.min(TIMER_MAX_MS, (timerCompletedTargetMs || 0) + addMs);
+                timerRemainingMs = newRemaining;
+            } else {
+                // Fresh start (from off, stopwatch, or completed)
+                timerMode = 'countdown';
+                timerRemainingMs = Math.min(TIMER_MAX_MS, addMs);
+                timerCompletedTargetMs = timerRemainingMs;
+            }
+            timerLastTick = performance.now();
+            startTimerTick();
+            updateTimerDisplay();
+            updateStopwatchButtonState();
+        }
+        
+        function startStopwatch() {
+            if (timerMode === 'stopwatch') {
+                // Pause
+                timerMode = 'stopwatch-paused';
+                stopTimerTick();
+                updateStopwatchButtonState();
+                return;
+            }
+            if (timerMode === 'stopwatch-paused') {
+                // Resume
+                timerMode = 'stopwatch';
+                timerLastTick = performance.now();
+                startTimerTick();
+                updateStopwatchButtonState();
+                return;
+            }
+            // Fresh start — from off, countdown, or completed
+            timerMode = 'stopwatch';
+            timerRemainingMs = 0;
+            timerLastTick = performance.now();
+            startTimerTick();
+            updateTimerDisplay();
+            updateStopwatchButtonState();
+        }
+        
+        function endTimer() {
+            timerMode = 'off';
+            timerRemainingMs = 0;
+            timerCompletedTargetMs = 0;
+            stopTimerTick();
+            updateTimerDisplay();
+            updateStopwatchButtonState();
+        }
+        
+        function updateTapTempoCountUI() {
+            const container = document.getElementById('tapTempoCountSegmented');
+            if (container) {
+                container.querySelectorAll('.seg-btn').forEach(btn => {
+                    const n = parseInt(btn.dataset.taps, 10);
+                    btn.classList.toggle('active', n === tapTempoCount);
+                });
+            }
+            updateTapProgressUI();
+        }
+        
+        function updateTapProgressUI() {
+            const progress = document.getElementById('tapProgress');
+            const btn = document.getElementById('tapTempoBtn');
+            if (!progress || !btn) return;
+        
+            if (tapTimes.length === 0) {
+                progress.textContent = '0/' + tapTempoCount;
+                btn.classList.remove('tapping');
+            } else {
+                const shown = Math.min(tapTimes.length, tapTempoCount);
+                progress.textContent = shown + '/' + tapTempoCount;
+                btn.classList.add('tapping');
+            }
+        }
+        
+        function resetTapTempo() {
+            tapTimes = [];
+            if (tapResetTimer) {
+                clearTimeout(tapResetTimer);
+                tapResetTimer = null;
+            }
+            updateTapProgressUI();
+        }
+        
+        function handleTapTempo() {
+            const now = performance.now();
+        
+            // Reset history if too long since last tap
+            if (tapTimes.length > 0 && (now - tapTimes[tapTimes.length - 1]) > TAP_TIMEOUT_MS) {
+                tapTimes = [];
+            }
+        
+            tapTimes.push(now);
+        
+            // Keep only the most recent (tapTempoCount + 1) taps
+            const maxKept = tapTempoCount + 1;
+            if (tapTimes.length > maxKept) {
+                tapTimes = tapTimes.slice(-maxKept);
+            }
+        
+            // (re)schedule the timeout reset — every tap restarts the clock
+            if (tapResetTimer) clearTimeout(tapResetTimer);
+            tapResetTimer = setTimeout(() => {
+                tapResetTimer = null;
+                tapTimes = [];
+                updateTapProgressUI();
+            }, TAP_TIMEOUT_MS);
+        
+            // Visual feedback
+            const btn = document.getElementById('tapTempoBtn');
+            if (btn) {
+                btn.classList.remove('flash');
+                void btn.offsetWidth;
+                btn.classList.add('flash');
+                setTimeout(() => btn.classList.remove('flash'), 180);
+            }
+        
+            updateTapProgressUI();
+        
+            // Not enough taps yet — do not change the tempo
+            if (tapTimes.length < tapTempoCount) return;
+        
+            // Compute average interval across all recorded intervals
+            const intervals = [];
+            for (let i = 1; i < tapTimes.length; i++) {
+                intervals.push(tapTimes[i] - tapTimes[i - 1]);
+            }
+            if (intervals.length === 0) return;
+        
+            const avgMs = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+            if (avgMs <= 0) return;
+        
+            const bpm = 60000 / avgMs;
+        
+            // Apply without restarting — the scheduler reads actualBPM on each loop,
+            // so the next scheduled beat picks up the new interval naturally.
+            setDisplayedTempo(clampTempo(bpm));
+        }
 
         function updateTimeSignature() {
-            topNumber = parseInt(topSelect.value);
+            const oldTopNumber = topNumber;
+            const newTopNumber = parseInt(topSelect.value);
+            const nextBeatInOldBar = (stepBeatCount % oldTopNumber) + 1;
+        
+            topNumber = newTopNumber;
             const newBottom = parseInt(bottomSelect.value);
-
+        
             if (songModeEnabled && activeSongId && songs[activeSongId]) {
-                // In song mode, the bottom value the user just picked is the
-                // effective denominator for the current step. Derive the
-                // global denominator multiplier from it.
                 const song = songs[activeSongId];
                 const step = song.steps[currentStepIndex];
                 if (step && presets[step.presetSlot]) {
@@ -4601,16 +6068,34 @@
                     }
                 }
             }
-
+        
+            if (isPlaying && !songModeEnabled && newTopNumber !== oldTopNumber) {
+                const nextBeatInNewBar = Math.min(nextBeatInOldBar, newTopNumber);
+                stepBeatCount = nextBeatInNewBar - 1;
+            }
+        
             bottomNumber = newBottom;
             updateActualTempo();
-            updateBeatGrid(0);
-            beatDisplay.textContent = '1';
-            saveState();
-
+        
             if (isPlaying && !songModeEnabled) {
-                stopMetronome();
-                startMetronome();
+                const beatToShow = (stepBeatCount % topNumber) + 1;
+                updateBeatGrid(beatToShow - 1);
+                beatDisplay.textContent = beatToShow.toString();
+            } else {
+                updateBeatGrid(0);
+                beatDisplay.textContent = '1';
+            }
+        
+            saveState();
+        
+            if (isPlaying && !songModeEnabled) {
+                const barShrank = newTopNumber < oldTopNumber;
+                const pastNewLastBeat = nextBeatInOldBar > newTopNumber;
+        
+                if (barShrank && pastNewLastBeat) {
+                    stopMetronome();
+                    startMetronome();
+                }
             }
         }
 
@@ -4646,7 +6131,7 @@
             if (sampSection) sampSection.style.display = 'none';
             beatEditorTempSettings.source = 'oscillator'; commitBeatEditorTempToLive();
         });
-
+        
         beatEditorSourceSample.addEventListener('click', () => {
             beatEditorSourceSample.classList.add('active');
             beatEditorSourceOscillator.classList.remove('active');
@@ -4654,7 +6139,7 @@
             const sampSection = document.getElementById('beatEditorSampleSection');
             if (oscSection) oscSection.style.display = 'none';
             if (sampSection) sampSection.style.display = 'block';
-            updateSampleDropdowns();
+            refreshSamplePickerPanels();
             beatEditorTempSettings.source = 'sample'; commitBeatEditorTempToLive();
         });
 
@@ -4684,12 +6169,7 @@
             beatEditorTempSettings.waveform = beatEditorWaveform.value;
             commitBeatEditorTempToLive();
         });
-        
-        beatEditorSampleSelect.addEventListener('change', () => {
-            beatEditorTempSettings.sampleId = beatEditorSampleSelect.value || null;
-            commitBeatEditorTempToLive();
-        });
-
+       
         // Accent level buttons
         document.querySelectorAll('.beat-editor-accent-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -4718,6 +6198,135 @@
                 setTimeout(() => beatEditorTestBtn.classList.remove('playing'), 250);
             });
         }
+        
+        const beatEditorCopySound = document.getElementById('beatEditorCopySound');
+        const beatEditorCopySoundRemaining = document.getElementById('beatEditorCopySoundRemaining');
+        
+        function flashFieldCopyBtn(btn) {
+            if (!btn) return;
+            btn.classList.remove('flash');
+            void btn.offsetWidth;
+            btn.classList.add('flash');
+            setTimeout(() => btn.classList.remove('flash'), 250);
+        }
+        
+        if (beatEditorCopySound) {
+            beatEditorCopySound.addEventListener('click', () => {
+                const fields = { sound: true, volume: false, accent: false, probability: false };
+                copyBeatToClipboard(beatEditorIndex, fields);
+                flashFieldCopyBtn(beatEditorCopySound);
+            });
+        }
+        
+        if (beatEditorCopySoundRemaining) {
+            beatEditorCopySoundRemaining.addEventListener('click', () => {
+                if (beatEditorIndex >= 32) return;
+                if (songModeEnabled) return;
+        
+                const fields = { sound: true, volume: false, accent: false, probability: false };
+                const sourceSettings = getBeatSettings(beatEditorIndex);
+        
+                applyFieldsToRemaining(beatEditorIndex, sourceSettings, fields);
+                flashFieldCopyBtn(beatEditorCopySoundRemaining);
+                // No clipboard touched. No strip. No "tap to paste" mode.
+            });
+        }
+        
+        const beatEditorCopyVolume = document.getElementById('beatEditorCopyVolume');
+        const beatEditorCopyVolumeRemaining = document.getElementById('beatEditorCopyVolumeRemaining');
+        
+        if (beatEditorCopyVolume) {
+            beatEditorCopyVolume.addEventListener('click', () => {
+                const fields = { sound: false, volume: true, accent: false, probability: false };
+                copyBeatToClipboard(beatEditorIndex, fields);
+                flashFieldCopyBtn(beatEditorCopyVolume);
+            });
+        }
+        
+        if (beatEditorCopyVolumeRemaining) {
+            beatEditorCopyVolumeRemaining.addEventListener('click', () => {
+                if (beatEditorIndex >= 32) return;
+                if (songModeEnabled) return;
+        
+                const fields = { sound: false, volume: true, accent: false, probability: false };
+                const sourceSettings = getBeatSettings(beatEditorIndex);
+        
+                applyFieldsToRemaining(beatEditorIndex, sourceSettings, fields);
+                flashFieldCopyBtn(beatEditorCopyVolumeRemaining);
+            });
+        }
+        
+        const beatEditorCopyAccent = document.getElementById('beatEditorCopyAccent');
+        const beatEditorCopyAccentRemaining = document.getElementById('beatEditorCopyAccentRemaining');
+        
+        if (beatEditorCopyAccent) {
+            beatEditorCopyAccent.addEventListener('click', () => {
+                const fields = { sound: false, volume: false, accent: true, probability: false };
+                copyBeatToClipboard(beatEditorIndex, fields);
+                flashFieldCopyBtn(beatEditorCopyAccent);
+            });
+        }
+        
+        if (beatEditorCopyAccentRemaining) {
+            beatEditorCopyAccentRemaining.addEventListener('click', () => {
+                if (beatEditorIndex >= 32) return;
+                if (songModeEnabled) return;
+        
+                const fields = { sound: false, volume: false, accent: true, probability: false };
+                const sourceSettings = getBeatSettings(beatEditorIndex);
+        
+                applyFieldsToRemaining(beatEditorIndex, sourceSettings, fields);
+                flashFieldCopyBtn(beatEditorCopyAccentRemaining);
+            });
+        }
+        
+        const beatEditorCopyProbability = document.getElementById('beatEditorCopyProbability');
+        const beatEditorCopyProbabilityRemaining = document.getElementById('beatEditorCopyProbabilityRemaining');
+        
+        if (beatEditorCopyProbability) {
+            beatEditorCopyProbability.addEventListener('click', () => {
+                const fields = { sound: false, volume: false, accent: false, probability: true };
+                copyBeatToClipboard(beatEditorIndex, fields);
+                flashFieldCopyBtn(beatEditorCopyProbability);
+            });
+        }
+        
+        if (beatEditorCopyProbabilityRemaining) {
+            beatEditorCopyProbabilityRemaining.addEventListener('click', () => {
+                if (beatEditorIndex >= 32) return;
+                if (songModeEnabled) return;
+        
+                const fields = { sound: false, volume: false, accent: false, probability: true };
+                const sourceSettings = getBeatSettings(beatEditorIndex);
+        
+                applyFieldsToRemaining(beatEditorIndex, sourceSettings, fields);
+                flashFieldCopyBtn(beatEditorCopyProbabilityRemaining);
+            });
+        }
+        
+        const beatEditorCopyBeat = document.getElementById('beatEditorCopyBeat');
+        const beatEditorCopyBeatRemaining = document.getElementById('beatEditorCopyBeatRemaining');
+        
+        if (beatEditorCopyBeat) {
+            beatEditorCopyBeat.addEventListener('click', () => {
+                const fields = { sound: true, volume: true, accent: true, probability: true };
+                copyBeatToClipboard(beatEditorIndex, fields);
+                flashFieldCopyBtn(beatEditorCopyBeat);
+            });
+        }
+        
+        if (beatEditorCopyBeatRemaining) {
+            beatEditorCopyBeatRemaining.addEventListener('click', () => {
+                if (beatEditorIndex >= 32) return;
+                if (songModeEnabled) return;
+        
+                const fields = { sound: true, volume: true, accent: true, probability: true };
+                const sourceSettings = getBeatSettings(beatEditorIndex);
+        
+                applyFieldsToRemaining(beatEditorIndex, sourceSettings, fields);
+                flashFieldCopyBtn(beatEditorCopyBeatRemaining);
+            });
+        }
 
         // Sample Manager
         mixerBtn.addEventListener('click', () => {
@@ -4742,10 +6351,20 @@
             const sample = await loadSampleFromFile(file);
             if (sample) {
                 renderSampleManager();
-                updateSampleDropdowns();
+                refreshSamplePickerPanels();
             }
             sampleFileInput.value = '';
         });
+        
+        const sampleManagerNewFolder = document.getElementById('sampleManagerNewFolder');
+        if (sampleManagerNewFolder) {
+            sampleManagerNewFolder.addEventListener('click', () => {
+                const name = prompt('Name for the new folder:');
+                if (name !== null && name.trim() !== '') {
+                    createFolder(name.trim());
+                }
+            });
+        }
 
         beatEditorModal.addEventListener('click', (e) => {
             if (e.target === beatEditorModal) {
@@ -4852,6 +6471,22 @@
             });
         }
         
+        const settingsShowShortcuts = document.getElementById('settingsShowShortcuts');
+        const shortcutsClose = document.getElementById('shortcutsClose');
+        const shortcutsModal = document.getElementById('shortcutsModal');
+        
+        if (settingsShowShortcuts) {
+            settingsShowShortcuts.addEventListener('click', openShortcutsModal);
+        }
+        if (shortcutsClose) {
+            shortcutsClose.addEventListener('click', closeShortcutsModal);
+        }
+        if (shortcutsModal) {
+            shortcutsModal.addEventListener('click', (e) => {
+                if (e.target === shortcutsModal) closeShortcutsModal();
+            });
+        }
+        
         const copyPartialModal = document.getElementById('copyPartialModal');
         const copyPartialConfirm = document.getElementById('copyPartialConfirm');
         const copyPartialCancel = document.getElementById('copyPartialCancel');
@@ -4891,6 +6526,30 @@
                 if (e.target === copyPartialModal) closeCopyPartialModal();
             });
         }
+        
+        const copyPartialPasteRemaining = document.getElementById('copyPartialPasteRemaining');
+        if (copyPartialPasteRemaining) {
+            copyPartialPasteRemaining.addEventListener('click', () => {
+                const fields = {
+                    sound: document.getElementById('copyFieldSound').checked,
+                    volume: document.getElementById('copyFieldVolume').checked,
+                    accent: document.getElementById('copyFieldAccent').checked,
+                    probability: document.getElementById('copyFieldProbability').checked
+                };
+        
+                const anyChecked = fields.sound || fields.volume || fields.accent || fields.probability;
+                if (!anyChecked) return;
+                if (copyPartialBeatIndex >= 32) return;
+        
+                // Same first step as confirmCopyPartial: put the selection on the clipboard
+                copyBeatToClipboard(copyPartialBeatIndex, fields);
+        
+                // Then immediately apply to everything to the right of the source beat
+                copyBeatToRemaining(copyPartialBeatIndex);
+        
+                closeCopyPartialModal();
+            });
+        }
 
         document.addEventListener('keydown', (e) => {
             if (!tempoModal.classList.contains('show')) return;
@@ -4904,6 +6563,7 @@
             } else if (key === 'Escape') {
                 closeNumpad();
             } else if (key === 'Enter') {
+                e.preventDefault();
                 confirmNumpad();
             }
         });
@@ -5086,12 +6746,12 @@
         rangeOkBtn.addEventListener('click', () => {
             const minVal = parseInt(rangeMinInput.value);
             const maxVal = parseInt(rangeMaxInput.value);
-
+        
             if (minVal <= maxVal && minVal >= 20 && maxVal <= 500) {
                 saveTempoRange(minVal, maxVal);
                 const clamped = clampTempo(displayedBPM);
                 if (clamped !== displayedBPM) {
-                    setDisplayedTempo(clamped, true);
+                    setDisplayedTempo(clamped);
                 }
                 closeRangePopup();
             } else {
@@ -5229,6 +6889,21 @@
                 startMetronome();
             }
         });
+        
+        // Timer / Stopwatch buttons
+        const timerAdd1 = document.getElementById('timerAdd1');
+        const timerAdd3 = document.getElementById('timerAdd3');
+        const timerAdd5 = document.getElementById('timerAdd5');
+        const timerAdd15 = document.getElementById('timerAdd15');
+        const timerEnd = document.getElementById('timerEnd');
+        const timerStopwatch = document.getElementById('timerStopwatch');
+        
+        if (timerAdd1) timerAdd1.addEventListener('click', () => startOrAddCountdown(1 * 60 * 1000));
+        if (timerAdd3) timerAdd3.addEventListener('click', () => startOrAddCountdown(3 * 60 * 1000));
+        if (timerAdd5) timerAdd5.addEventListener('click', () => startOrAddCountdown(5 * 60 * 1000));
+        if (timerAdd15) timerAdd15.addEventListener('click', () => startOrAddCountdown(15 * 60 * 1000));
+        if (timerEnd) timerEnd.addEventListener('click', endTimer);
+        if (timerStopwatch) timerStopwatch.addEventListener('click', startStopwatch);
 
         document.addEventListener('keydown', (e) => {
             // Undo / Redo
@@ -5251,27 +6926,177 @@
             }
           
             if (e.code === 'Space' && !e.repeat) {
-                // Don't hijack the spacebar when the user is typing in a text field
-                const tag = (e.target.tagName || '').toLowerCase();
-                const isEditable = (tag === 'input' || tag === 'textarea' || e.target.isContentEditable);
-                if (isEditable) {
-                    // Let the space through to the input
-                } else if (!tempoModal.classList.contains('show') &&
-                           !rangeModal.classList.contains('show') &&
-                           !presetModal.classList.contains('show') &&
-                           !beatEditorModal.classList.contains('show') &&
-                           !sampleManagerModal.classList.contains('show') &&
-                           !copyToModal.classList.contains('show') &&
-                           !settingsModal.classList.contains('show') &&
-                           !populateModal.classList.contains('show') &&
-                           !songsModal.classList.contains('show') &&
-                           !importModal.classList.contains('show') &&
-                           !copyPartialModal.classList.contains('show')) {
+                if (shouldHandleShortcut(e)) {
                     e.preventDefault();
                     if (isPlaying) stopMetronome();
                     else startMetronome();
                 }
             }
+            
+            if ((e.key === 't' || e.key === 'T') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    openNumpad('bpm', displayedBPM);
+                }
+            }
+            
+            // Tap tempo
+            if ((e.key === 'k' || e.key === 'K') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    handleTapTempo();
+                }
+            }
+            
+            // Random + : open bracket
+            if (e.key === ']' && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    applyRandomTempo(1);
+                }
+            }
+            
+            // Random − : close bracket
+            if (e.key === '[' && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    applyRandomTempo(-1);
+                }
+            }
+            
+            // Mixer
+            if ((e.key === 'm' || e.key === 'M') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    renderSampleManager();
+                    sampleManagerModal.classList.add('show');
+                }
+            }
+            
+            // Settings
+            if ((e.key === 's' || e.key === 'S') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    openSettingsModal();
+                }
+            }
+            
+            // Toggle Beat Grid / Presets
+            if ((e.key === 'b' || e.key === 'B') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    toggleGridMode();
+                }
+            }
+            
+            // Tempo −1
+            if ((e.key === '-' || e.key === '_') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    setDisplayedTempo(clampTempo(displayedBPM - 1));
+                }
+            }
+            
+            // Tempo +1
+            if ((e.key === '=' || e.key === '+') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    setDisplayedTempo(clampTempo(displayedBPM + 1));
+                }
+            }
+            
+            // Time signature numerator
+            if ((e.key === 'n' || e.key === 'N') && !e.repeat) {
+                if (shouldHandleShortcut(e) && !songModeEnabled) {
+                    e.preventDefault();
+                    topSelect.focus();
+                    if (topSelect.showPicker) {
+                        try { topSelect.showPicker(); } catch (_) {}
+                    }
+                }
+            }
+            
+            // Time signature denominator
+            if ((e.key === 'd' || e.key === 'D') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    if (songModeEnabled) {
+                        openNumpad('songDenom', bottomNumber);
+                    } else {
+                        bottomSelect.focus();
+                        if (bottomSelect.showPicker) {
+                            try { bottomSelect.showPicker(); } catch (_) {}
+                        }
+                    }
+                }
+            }
+            
+            // Open Songs modal / Toggle song mode
+            if ((e.key === 'g' || e.key === 'G') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        openSongsModal();
+                    } else if (songModeEnabled) {
+                        exitSongMode();
+                    } else if (selectedSongId && songs[selectedSongId]) {
+                        enterSongMode(selectedSongId);
+                    } else {
+                        openSongsModal();
+                    }
+                }
+            }
+            
+            // Round tempo to whole number
+            if ((e.key === 'r' || e.key === 'R') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    btnRound.click();
+                }
+            }
+            
+            // Timer duration buttons
+            if (e.key === '1' && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    startOrAddCountdown(1 * 60 * 1000);
+                }
+            }
+            if (e.key === '2' && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    startOrAddCountdown(3 * 60 * 1000);
+                }
+            }
+            if (e.key === '3' && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    startOrAddCountdown(5 * 60 * 1000);
+                }
+            }
+            if (e.key === '4' && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    startOrAddCountdown(15 * 60 * 1000);
+                }
+            }
+            
+            // End Timer
+            if ((e.key === 'e' || e.key === 'E') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    endTimer();
+                }
+            }
+            
+            // Stopwatch
+            if ((e.key === 'w' || e.key === 'W') && !e.repeat) {
+                if (shouldHandleShortcut(e)) {
+                    e.preventDefault();
+                    startStopwatch();
+                }
+            }
+            
             if (e.key === 'Escape') {
                 if (rangeModal.classList.contains('show')) {
                     closeRangePopup();
@@ -5291,6 +7116,9 @@
                 if (beatContextMenu.classList.contains('show')) {
                     closeBeatContextMenu();
                 }
+                if (shortcutsModal && shortcutsModal.classList.contains('show')) {
+                    closeShortcutsModal();
+                }
                 if (settingsModal.classList.contains('show')) {
                     closeSettingsModal();
                 }
@@ -5303,32 +7131,51 @@
                 if (copyPartialModal.classList.contains('show')) {
                     closeCopyPartialModal();
                 }
+                // If no modal was open, Escape exits song mode
+                if (!isAnyModalOpen() && songModeEnabled) {
+                    exitSongMode();
+                }
             }
         });
 
         btnMinus1.addEventListener('click', () => {
-            setDisplayedTempo(clampTempo(displayedBPM - 1), true);
+            setDisplayedTempo(clampTempo(displayedBPM - 1));
         });
-
+        
         btnPlus1.addEventListener('click', () => {
-            setDisplayedTempo(clampTempo(displayedBPM + 1), true);
+            setDisplayedTempo(clampTempo(displayedBPM + 1));
         });
-
+        
         btnMinus01.addEventListener('click', () => {
             if (tempoDecimals === 0) return;
-            setDisplayedTempo(clampTempo(displayedBPM - 0.1), true);
+            setDisplayedTempo(clampTempo(displayedBPM - 0.1));
         });
-
+        
         btnPlus01.addEventListener('click', () => {
             if (tempoDecimals === 0) return;
-            setDisplayedTempo(clampTempo(displayedBPM + 0.1), true);
+            setDisplayedTempo(clampTempo(displayedBPM + 0.1));
         });
-
-        btnAcc.addEventListener('click', () => {
-            btnAcc.classList.toggle('active');
-            accentEnabled = btnAcc.classList.contains('active');
-            saveState();
+        
+        btnRound.addEventListener('click', () => {
+            const rounded = Math.round(displayedBPM);
+            if (rounded === displayedBPM) return;
+            setDisplayedTempo(clampTempo(rounded));
         });
+        
+        const tapTempoBtn = document.getElementById('tapTempoBtn');
+        if (tapTempoBtn) {
+            tapTempoBtn.addEventListener('click', handleTapTempo);
+        }
+        
+        const tapTempoCountSegmented = document.getElementById('tapTempoCountSegmented');
+        if (tapTempoCountSegmented) {
+            tapTempoCountSegmented.querySelectorAll('.seg-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const n = parseInt(btn.dataset.taps, 10);
+                    setTapTempoCount(n);
+                });
+            });
+        }
 
         volumeSlider.addEventListener('input', () => {
             currentVolume = parseInt(volumeSlider.value) / 100;
@@ -5361,9 +7208,13 @@
 
             loadPresetsFromStorage();
             loadSongs();
+            loadSelectedSong();
             loadBeatSettings();
             loadAccentMultipliers();
+            userFolderNames = loadUserFolderNames();
+            loadOrderState();
             loadTempoDecimals();
+            loadTapTempoCount();
             loadSongStartAccent();
             const stateLoaded = loadState();
             loadUndoState();
@@ -5386,12 +7237,6 @@
             if (ribToggle) ribToggle.style.color = isPercentageMode ? '#f5c842' : '#4a9eff';
             if (ninInput) ninInput.value = ninValue.toString();
 
-            if (accentEnabled && btnAcc) {
-                btnAcc.classList.add('active');
-            } else if (btnAcc) {
-                btnAcc.classList.remove('active');
-            }
-
             if (autoMode !== 'off') {
                 if (stopRadio) stopRadio.classList.remove('active');
                 if (plusBPMRadio) plusBPMRadio.classList.remove('active');
@@ -5408,7 +7253,7 @@
 
             const initialClamped = clampTempo(displayedBPM);
             if (initialClamped !== displayedBPM) {
-                setDisplayedTempo(initialClamped, true);
+                setDisplayedTempo(initialClamped);
             }
 
             const savedGridMode = loadGridMode();
@@ -5469,25 +7314,35 @@
             setupSongStartControls();
             updateSongStartUI();
             updateTempoDecimalUI();
+            updateTapTempoCountUI();
             updateSongStrip();
             updateSongModeUI();
-            updateSampleDropdowns();
-
+            refreshSamplePickerPanels();
+            updateTimerDisplay();
+            updateStopwatchButtonState();
+            
+            // About panel in Settings
+            const settingsAbout = document.getElementById('settingsAbout');
+            if (settingsAbout) {
+                settingsAbout.innerHTML =
+                    'WebtronomE9 <span class="version">v' + APP_VERSION + '</span><br>' +
+                    APP_BUILD_DATE;
+            }
+            
             document.addEventListener('click', () => {
                 if (!isInitialized && !isPlaying) {
                     initializeAudioEngine();
                 }
             }, { once: true });
+            
+            initSamplePickers();
 
-            console.log('🎵 WebtronomE9 Phase 6c (Probability + Accent Levels) loaded!');
             console.log(`💡 State loaded: ${stateLoaded ? 'YES' : 'NO (using defaults)'}`);
             console.log(`💡 Presets loaded: ${Object.keys(presets).length}/${MAX_PRESETS}`);
-            console.log(`💡 Grid mode: ${gridMode}`);
+            //console.log(`💡 Grid mode: ${gridMode}`);
             console.log(`💡 Current preset slot: ${currentPresetSlot || 'None'}`);
             console.log(`💡 Samples loaded: ${sampleLibrary.length}`);
-            console.log('💡 Accent levels: 0=Mute, 1=Soft, 2=Normal, 3=Accent');
-            console.log('💡 Probability: Random chance per beat (0-100%)');
-            console.log('💡 Click a beat in Beat Grid mode to edit!');
+            console.log(`🎵 WebtronomE9 v${APP_VERSION} loaded — ${APP_BUILD_DATE}`);
         }
 
         init();

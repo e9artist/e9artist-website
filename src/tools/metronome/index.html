@@ -1,8 +1,17 @@
 <!DOCTYPE html>
+<!--
+  WebtronomE9 — a web-based metronome for musicians
+  Version: 1.0.0
+  Last updated: 2026-09-26
+  Author: Eli Page
+-->
 <html lang="en"> 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="Eli Page" />
+    <meta name="description" content="A free web-based metronome with customizable beat grids, sample support, and practice tools." />
+    <meta name="theme-color" content="#0a0a0f" />
     <title>WebtronomE9</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -25,10 +34,10 @@
             <div class="info-group">
                 <div class="time-signature">
                     <div class="time-sig-wrapper">
-                        <select class="time-sig-select" id="topNumber"></select>
+                        <select class="time-sig-select" id="topNumber" title="Beats per Bar (N)"></select>
                     </div>
                     <div class="time-sig-wrapper">
-                        <select class="time-sig-select" id="bottomNumber">
+                        <select class="time-sig-select" id="bottomNumber" title="Quarter/8th/16th Notes (D)">
                             <option value="4">4</option>
                             <option value="8">8</option>
                             <option value="16">16</option>
@@ -46,11 +55,11 @@
         </div>
 
         <div class="button-row">
-            <div class="btn-group"><button class="action-btn" id="btnMinus1">−1</button></div>
-            <div class="btn-group"><button class="action-btn" id="btnPlus1">+1</button></div>
-            <div class="btn-group"><button class="action-btn" id="btnMinus01">−.1</button></div>
-            <div class="btn-group"><button class="action-btn" id="btnPlus01">+.1</button></div>
-            <div class="btn-group"><button class="action-btn accent" id="btnAcc">Acc</button></div>
+            <button class="action-btn" id="btnMinus1" title="Decrease tempo by 1 (−)">−1<span class="key-hint">−</span></button>
+            <button class="action-btn" id="btnPlus1" title="Increase tempo by 1 (+)">+1<span class="key-hint">+</span></button>
+            <button class="action-btn" id="btnMinus01" title="Decrease tempo by 0.1">−.1</button>
+            <button class="action-btn" id="btnPlus01" title="Increase tempo by 0.1">+.1</button>
+            <button class="action-btn accent" id="btnRound" title="Round tempo to whole number (R)">Round</button>
         </div>
 
         <div class="random-controls-row">
@@ -58,10 +67,12 @@
                 <button class="random-btn" id="randomPlusBtn">
                     <span class="main-text">+</span>
                     <span class="sub-text">random</span>
+                    <span class="key-hint">]</span>
                 </button>
                 <button class="random-btn" id="randomMinusBtn">
                     <span class="main-text">random</span>
                     <span class="sub-text">−</span>
+                    <span class="key-hint">[</span>
                 </button>
             </div>
             <div class="random-col half">
@@ -72,8 +83,8 @@
             <div class="random-col placeholder">
                 <div class="placeholder-controls">
                     <div class="placeholder-top-row">
-                        <button class="placeholder-top-btn" id="mixerBtn">Mixer</button>
-                        <button class="placeholder-top-btn" id="rangeBtn">Range</button>
+                        <button class="placeholder-top-btn" id="mixerBtn" title="Open Sample Library (M)">Mixer<span class="key-hint">M</span></button>
+                        <button class="placeholder-top-btn" id="rangeBtn" title="Tempo Range">Range</button>
                     </div>
                     <div class="placeholder-bottom-row">
                         <div class="placeholder-bottom-col">
@@ -92,12 +103,29 @@
 
         <div class="start-stop-container">
             <div class="start-stop-side">
-                <button class="song-mode-btn" id="songModeBtn">Song</button>
+                <button class="tap-tempo-btn" id="tapTempoBtn" title="Tap Tempo (K)">
+                    <span class="tap-main">Tap</span>
+                    <span class="tap-progress" id="tapProgress">0/3</span>
+                    <span class="key-hint">K</span>
+                </button>
+                <button class="song-mode-btn" id="songModeBtn" title="Open Song Menu (Shift+G)/Toggle Song Mode (G)">Song<span class="key-hint">G</span></button>
             </div>
             <div class="start-stop-center">
                 <button class="start-btn" id="startBtn">Start</button>
             </div>
-            <div class="start-stop-side"></div>
+            <div class="start-stop-right">
+                <div class="timer-display" id="timerDisplay"></div>
+                <div class="timer-btn-row">
+                    <button class="timer-add-btn" id="timerAdd1" title="Add 1 minute (1)">+1</button>
+                    <button class="timer-add-btn" id="timerAdd3" title="Add 3 minutes (2)">+3</button>
+                    <button class="timer-add-btn" id="timerAdd5" title="Add 5 minutes (3)">+5</button>
+                    <button class="timer-add-btn" id="timerAdd15" title="Add 15 minutes (4)">+15</button>
+                </div>
+                <div class="timer-btn-row">
+                    <button class="timer-sw-btn" id="timerStopwatch" title="Stopwatch (W)">⏱</button>
+                    <button class="timer-end-btn" id="timerEnd" title="End Timer (E)">End</button>
+                </div>
+            </div>
         </div>
 
         <div class="beat-grid" id="beatGrid"></div>
@@ -106,13 +134,17 @@
             <span class="song-strip-icon">▶</span>
             <span class="song-strip-name" id="songStripName">Song</span>
             <span class="song-strip-step" id="songStripStep"></span>
+            <span class="song-strip-loop" id="songStripLoop" title="Full song loops completed">⟳ 0</span>
             <button class="song-strip-exit" id="songStripExit" title="Exit song mode">✕</button>
         </div>
 
         <div class="bottom-buttons">
             <button class="bottom-btn" id="undoBtn" title="Undo (Ctrl+Z)">↶</button>
-            <button class="bottom-btn preset-btn" id="presetManagerBtn">Beat Grid</button>
-            <button class="bottom-btn" id="settingsBtn">Settings</button>
+            <button class="bottom-btn preset-btn" id="presetManagerBtn" title="Toggle Beat Grid / Presets (B)">
+                <span id="presetManagerLabel">Beat Grid</span>
+                <span class="key-hint">B</span>
+            </button>
+            <button class="bottom-btn" id="settingsBtn" title="Open Settings (S)">Settings<span class="key-hint">S</span></button>
             <button class="bottom-btn" id="redoBtn" title="Redo (Ctrl+Shift+Z)">↷</button>
         </div>
                 <!-- Clipboard indicator -->
@@ -216,6 +248,15 @@
     <div class="beat-editor-modal" id="beatEditorModal">
         <div class="beat-editor-content">
             <div class="beat-editor-title" id="beatEditorTitle">Edit Beat: 1 of 4</div>
+            <div class="beat-editor-row sound-header-row">
+                <div class="beat-editor-label">
+                    <span class="label">Sound</span>
+                    <span class="field-copy-group">
+                        <button class="field-copy-btn" id="beatEditorCopySound" ...>⧉</button>
+                        <button class="field-copy-btn remaining" id="beatEditorCopySoundRemaining" ...>⧉→</button>
+                    </span>
+                </div>
+            </div>
 
             <div class="beat-editor-source-group">
                 <button class="beat-editor-source-btn active" id="beatEditorSourceOscillator">Oscillator</button>
@@ -249,9 +290,13 @@
                     <div class="beat-editor-label">
                         <span class="label">Sample</span>
                     </div>
-                    <select class="beat-editor-select" id="beatEditorSampleSelect">
-                        <option value="">-- No samples --</option>
-                    </select>
+                    <div class="sample-picker" id="beatEditorSamplePicker">
+                        <button type="button" class="sample-picker-trigger" id="beatEditorSampleTrigger">
+                            <span class="sample-picker-label" id="beatEditorSampleLabel">-- No samples --</span>
+                            <span class="sample-picker-caret">▾</span>
+                        </button>
+                        <div class="sample-picker-panel" id="beatEditorSamplePanel"></div>
+                    </div>
                 </div>
             </div>
 
@@ -259,6 +304,10 @@
                 <div class="beat-editor-label">
                     <span class="label">Volume</span>
                     <span class="value" id="beatEditorVolDisplay">80%</span>
+                    <span class="field-copy-group">
+                        <button class="field-copy-btn" id="beatEditorCopyVolume" title="Copy volume to clipboard" aria-label="Copy volume">⧉</button>
+                        <button class="field-copy-btn remaining" id="beatEditorCopyVolumeRemaining" title="Copy volume to all remaining beats" aria-label="Copy volume to remaining beats">⧉→</button>
+                    </span>
                 </div>
                 <input type="range" class="beat-editor-slider" id="beatEditorVolSlider" min="0" max="100" value="80" step="1" />
             </div>
@@ -267,6 +316,10 @@
             <div class="beat-editor-row accent-row">
                 <div class="beat-editor-label">
                     <span class="label">Accent Level</span>
+                    <span class="field-copy-group">
+                        <button class="field-copy-btn" id="beatEditorCopyAccent" title="Copy accent level to clipboard" aria-label="Copy accent level">⧉</button>
+                        <button class="field-copy-btn remaining" id="beatEditorCopyAccentRemaining" title="Copy accent level to all remaining beats" aria-label="Copy accent level to remaining beats">⧉→</button>
+                    </span>
                 </div>
                 <div class="beat-editor-accent-buttons">
                   <button class="beat-editor-accent-btn" data-level="0">
@@ -297,9 +350,24 @@
                 <div class="beat-editor-label">
                     <span class="label">Probability</span>
                     <span class="value" id="beatEditorProbDisplay">100%</span>
+                    <span class="field-copy-group">
+                        <button class="field-copy-btn" id="beatEditorCopyProbability" title="Copy probability to clipboard" aria-label="Copy probability">⧉</button>
+                        <button class="field-copy-btn remaining" id="beatEditorCopyProbabilityRemaining" title="Copy probability to all remaining beats" aria-label="Copy probability to remaining beats">⧉→</button>
+                    </span>
                 </div>
                 <input type="range" class="beat-editor-slider" id="beatEditorProbSlider" min="0" max="100" value="100" step="1" />
                 <div class="prob-label">Chance this beat plays</div>
+            </div>
+            
+            <!-- Whole-beat clipboard actions -->
+            <div class="beat-editor-row beat-editor-clipboard-row">
+                <div class="beat-editor-label">
+                    <span class="label">Whole Beat</span>
+                    <span class="field-copy-group">
+                        <button class="field-copy-btn" id="beatEditorCopyBeat" title="Copy entire beat to clipboard" aria-label="Copy entire beat">⧉</button>
+                        <button class="field-copy-btn remaining" id="beatEditorCopyBeatRemaining" title="Copy entire beat to all remaining beats" aria-label="Copy entire beat to remaining beats">⧉→</button>
+                    </span>
+                </div>
             </div>
 
             <div class="beat-editor-actions">
@@ -365,8 +433,9 @@
             <div class="sample-manager-upload">
                 <label class="sample-manager-upload-btn" for="sampleFileInput">📁 Upload Sample</label>
                 <input type="file" id="sampleFileInput" accept="audio/*" style="display:none;" />
+                <button class="sample-manager-newfolder-btn" id="sampleManagerNewFolder">+ New Folder</button>
             </div>
-
+            
             <div class="sample-manager-list" id="sampleManagerList">
                 <div class="sample-manager-empty">No samples loaded yet. Upload a WAV, MP3, or other audio file.</div>
             </div>
@@ -444,6 +513,22 @@
                     Tempos will be rounded and displayed with this many decimal places.
                 </div>
             </div>
+            
+            <div class="settings-section">
+                <div class="settings-section-label">Tap Tempo</div>
+                <div class="settings-inline-row">
+                    <span class="settings-inline-label">Taps required</span>
+                    <div class="settings-segmented" id="tapTempoCountSegmented">
+                        <button class="seg-btn" data-taps="2">2</button>
+                        <button class="seg-btn" data-taps="3">3</button>
+                        <button class="seg-btn" data-taps="4">4</button>
+                        <button class="seg-btn" data-taps="5">5</button>
+                    </div>
+                </div>
+                <div class="settings-inline-hint">
+                    Number of taps needed before the tempo updates.
+                </div>
+            </div>
 
             <div class="settings-section">
                 <div class="settings-section-label">Beat Grid</div>
@@ -472,9 +557,85 @@
                 </button>
                 <input type="file" id="importFileInput" accept="application/json,.json" style="display:none;" />
             </div>
-
+            <div class="settings-section">
+                <div class="settings-section-label">Reference</div>
+                <button class="settings-action-btn" id="settingsShowShortcuts">
+                    <span class="settings-action-title">Keyboard Shortcuts</span>
+                    <span class="settings-action-desc">View all available keyboard shortcuts</span>
+                </button>
+            </div>
+            
             <div class="settings-actions">
                 <button class="settings-btn close-btn" id="settingsClose">Close</button>
+            </div>
+            <div class="settings-about" id="settingsAbout"></div>
+        </div>
+    </div>
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="shortcuts-modal" id="shortcutsModal">
+        <div class="shortcuts-content">
+            <div class="shortcuts-title">Keyboard Shortcuts</div>
+    
+            <div class="shortcuts-groups">
+                <div class="shortcuts-group">
+                    <div class="shortcuts-group-label">Transport</div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>Space</kbd></span><span class="shortcuts-desc">Start / Stop</span></div>
+                </div>
+    
+                <div class="shortcuts-group">
+                    <div class="shortcuts-group-label">Tempo</div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>T</kbd></span><span class="shortcuts-desc">Open tempo numpad</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>−</kbd> <kbd>_</kbd></span><span class="shortcuts-desc">Decrease tempo by 1</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>=</kbd> <kbd>+</kbd></span><span class="shortcuts-desc">Increase tempo by 1</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>R</kbd></span><span class="shortcuts-desc">Round tempo to whole number</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>[</kbd></span><span class="shortcuts-desc">Random decrease</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>]</kbd></span><span class="shortcuts-desc">Random increase</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>K</kbd></span><span class="shortcuts-desc">Tap tempo</span></div>
+                </div>
+    
+                <div class="shortcuts-group">
+                    <div class="shortcuts-group-label">Time Signature</div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>N</kbd></span><span class="shortcuts-desc">Beats per bar</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>D</kbd></span><span class="shortcuts-desc">Note value (denominator)</span></div>
+                </div>
+    
+                <div class="shortcuts-group">
+                    <div class="shortcuts-group-label">Beat Grid</div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>B</kbd></span><span class="shortcuts-desc">Toggle Beat Grid / Presets</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>Z</kbd></span><span class="shortcuts-desc">Undo</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>Shift</kbd> <kbd>Z</kbd></span><span class="shortcuts-desc">Redo</span></div>
+                </div>
+    
+                <div class="shortcuts-group">
+                    <div class="shortcuts-group-label">Panels &amp; Modes</div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>M</kbd></span><span class="shortcuts-desc">Sample Library</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>S</kbd></span><span class="shortcuts-desc">Settings</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>G</kbd></span><span class="shortcuts-desc">Toggle Song mode</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>Shift</kbd> <kbd>G</kbd></span><span class="shortcuts-desc">Open Songs menu</span></div>
+                </div>
+    
+                <div class="shortcuts-group">
+                    <div class="shortcuts-group-label">Timer &amp; Stopwatch</div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>1</kbd></span><span class="shortcuts-desc">Add 1 minute</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>2</kbd></span><span class="shortcuts-desc">Add 3 minutes</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>3</kbd></span><span class="shortcuts-desc">Add 5 minutes</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>4</kbd></span><span class="shortcuts-desc">Add 15 minutes</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>E</kbd></span><span class="shortcuts-desc">End Timer</span></div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>W</kbd></span><span class="shortcuts-desc">Stopwatch toggle</span></div>
+                </div>
+    
+                <div class="shortcuts-group">
+                    <div class="shortcuts-group-label">General</div>
+                    <div class="shortcuts-row"><span class="shortcuts-keys"><kbd>Esc</kbd></span><span class="shortcuts-desc">Close modal / exit Song mode</span></div>
+                </div>
+            </div>
+    
+            <div class="shortcuts-note">
+                Single-key shortcuts are disabled while a text field is focused or any modal is open.
+            </div>
+    
+            <div class="shortcuts-actions">
+                <button class="shortcuts-btn close-btn" id="shortcutsClose">Close</button>
             </div>
         </div>
     </div>
@@ -516,9 +677,13 @@
                     <div class="beat-editor-label">
                         <span class="label">Sample</span>
                     </div>
-                    <select class="beat-editor-select" id="populateSampleSelect">
-                        <option value="">-- No samples --</option>
-                    </select>
+                    <div class="sample-picker" id="populateSamplePicker">
+                        <button type="button" class="sample-picker-trigger" id="populateSampleTrigger">
+                            <span class="sample-picker-label" id="populateSampleLabel">-- No samples --</span>
+                            <span class="sample-picker-caret">▾</span>
+                        </button>
+                        <div class="sample-picker-panel" id="populateSamplePanel"></div>
+                    </div>
                 </div>
             </div>
 
@@ -664,6 +829,7 @@
 
             <div class="copy-partial-actions">
                 <button class="copy-partial-btn cancel-btn" id="copyPartialCancel">Cancel</button>
+                <button class="copy-partial-btn remaining-btn" id="copyPartialPasteRemaining">Paste to Remaining →</button>
                 <button class="copy-partial-btn ok-btn" id="copyPartialConfirm">Copy</button>
             </div>
         </div>
