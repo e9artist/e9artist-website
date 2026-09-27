@@ -608,10 +608,11 @@
             container.innerHTML = '';
 
             // Are we editing the song that is currently playing?
-            const isActiveSong = songModeEnabled &&
-                                 activeSongId &&
-                                 songs[activeSongId] === song;
-            const reorderDisabled = !!isActiveSong;
+            const songIsRunning = songModeEnabled &&
+                                  activeSongId &&
+                                  songs[activeSongId] === song &&
+                                  isPlaying;
+            const reorderDisabled = !!songIsRunning;
 
             song.steps.forEach((step, idx) => {
                 const row = document.createElement('div');
