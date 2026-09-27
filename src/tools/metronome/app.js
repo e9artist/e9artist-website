@@ -5712,43 +5712,52 @@
             timerID = setTimeout(scheduler, lookahead);
         }
 
-        function startMetronome() {
-            if (isPlaying) return;
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
+        let startInProgress = false;
+        
+        async function startMetronome() {
+            if (isPlaying || startInProgress) return;
+            startInProgress = true;
+        
+            try {
+                if (isPlaying) return;
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                if (!isInitialized) {
+                    initializeAudioEngine();
+                }
+                if (oscillatorGainNode) {
+                    oscillatorGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+                    oscillatorGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                }
+                if (sampleGainNode) {
+                    sampleGainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+                }
+    
+                // Song-mode position resets are handled by stopMetronome and
+                // enterSongMode, not here. That way a re-entry of the current song
+                // can preserve the practice multipliers while still starting from
+                // step 1.
+    
+                isPlaying = true;
+                beatCount = 0;
+                stepBeatCount = 0;
+                measureCount = 0;
+                songLoopCount = 1;
+                songLoopsSinceAction = 1;
+                barsSinceAction = 0;
+                pendingAction = false;
+                hasTriggeredOnce = false;
+                barsDisplay.textContent = '0';
+                beatDisplay.textContent = '1';
+                nextNoteTime = audioCtx.currentTime + 0.05;
+                updateBeatGrid(0);
+                scheduler();
+                startBtn.textContent = 'Stop';
+                startBtn.classList.add('active');
+            } finally {
+                startInProgress = false;
             }
-            if (!isInitialized) {
-                initializeAudioEngine();
-            }
-            if (oscillatorGainNode) {
-                oscillatorGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
-                oscillatorGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-            }
-            if (sampleGainNode) {
-                sampleGainNode.gain.setValueAtTime(1, audioCtx.currentTime);
-            }
-
-            // Song-mode position resets are handled by stopMetronome and
-            // enterSongMode, not here. That way a re-entry of the current song
-            // can preserve the practice multipliers while still starting from
-            // step 1.
-
-            isPlaying = true;
-            beatCount = 0;
-            stepBeatCount = 0;
-            measureCount = 0;
-            songLoopCount = 1;
-            songLoopsSinceAction = 1;
-            barsSinceAction = 0;
-            pendingAction = false;
-            hasTriggeredOnce = false;
-            barsDisplay.textContent = '0';
-            beatDisplay.textContent = '1';
-            nextNoteTime = audioCtx.currentTime + 0.05;
-            updateBeatGrid(0);
-            scheduler();
-            startBtn.textContent = 'Stop';
-            startBtn.classList.add('active');
         }
 
         function stopMetronome() {
