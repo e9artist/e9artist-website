@@ -5723,6 +5723,7 @@
                 if (audioCtx.state === 'suspended') {
                     audioCtx.resume();
                 }
+                const wasFirstStart = !isInitialized;
                 if (!isInitialized) {
                     initializeAudioEngine();
                 }
@@ -5750,7 +5751,9 @@
                 hasTriggeredOnce = false;
                 barsDisplay.textContent = '0';
                 beatDisplay.textContent = '1';
-                nextNoteTime = audioCtx.currentTime + 0.05;
+                // Give the audio graph a little more headroom on the very first
+                // start after page load, since the graph has just been built.
+                nextNoteTime = audioCtx.currentTime + (wasFirstStart ? 0.15 : 0.05);
                 updateBeatGrid(0);
                 scheduler();
                 startBtn.textContent = 'Stop';
