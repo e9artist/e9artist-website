@@ -13,14 +13,14 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 0.5rem;
+            padding: 0;
         }
 
         .container {
             background: #111118;
             border-radius: 1.5rem;
             padding: 1rem 1.5rem;
-            max-width: 420px;
+            max-width: 440px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0, 50, 150, 0.15);
             border: 1px solid rgba(74, 158, 255, 0.06);
@@ -4509,7 +4509,7 @@
 
         @media (max-width: 480px) {
             .container {
-                padding: 0.8rem 1rem;
+                padding: 0.5rem 0.7rem;
                 border-radius: 1rem;
             }
             .tempo-whole {
