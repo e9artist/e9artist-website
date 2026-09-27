@@ -5738,7 +5738,7 @@
             gain.connect(audioCtx.destination);
             
             osc.start(now);
-            osc.stop(now + 0.005); // 5ms total
+            osc.stop(now + 0.01); // 10ms total
         }
 
         let startInProgress = false;
